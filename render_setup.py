@@ -111,6 +111,16 @@ if arrival_time_old in html:
 elif arrival_time_new not in html:
     raise SystemExit("No se encontró el HTML de llegadas para mostrar minutos en predicciones GTFS-RT.")
 
+# Etiquetar las llegadas sin predicción GPS/GTFS-RT como "Programado".
+arrival_label_old = """'<small>' + escaparHTML(esTiempoReal ? 'En vivo' + diferencia : 'Oficial') + '</small>' +"""
+arrival_label_new = """'<small>' + escaparHTML(esTiempoReal ? 'En vivo' + diferencia : 'Programado') + '</small>' +"""
+if arrival_label_old in html:
+    html = html.replace(arrival_label_old, arrival_label_new, 1)
+elif arrival_label_new not in html:
+    raise SystemExit("No se encontró la etiqueta Oficial/Programado de las llegadas.")
+
+html = html.replace(": 'Horario oficial';", ": 'Horario programado';", 1)
+
 # El botón "Ver próximo servicio" también debe sincronizar las pestañas Hoy/Mañana.
 next_service_old = """if (selectorFecha) selectorFecha.value = fechaSiguiente;
             cargarLlegadasParada(stopId, popup, fechaSiguiente, stopIds);"""
@@ -136,7 +146,7 @@ if 'id="t05-boot-style"' not in html:
     html = html.replace("</head>", boot_css + "</head>", 1)
 
 # Cargar la aplicación móvil después de los scripts originales, para reutilizar el mapa y sus datos.
-script_tag = """  <script src="{{ url_for('static', filename='t05-mobile.js') }}?v=16"></script>
+script_tag = """  <script src="{{ url_for('static', filename='t05-mobile.js') }}?v=17"></script>
 """
 if "filename='t05-mobile.js'" not in html:
     if "</body>" not in html:
