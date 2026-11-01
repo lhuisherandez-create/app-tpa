@@ -618,5 +618,16 @@ html = html.replace(
               eventoCierre.popup._solicitudLlegadasParada =""", 1
 )
 
+validaciones_ui = {
+    "minimapa de parada": 'class="stop-mini-map"' in html,
+    "selector de línea": 'data-linea-filtro' in html,
+    "filtro de llegadas": 'filtroLineaActiva' in html,
+    "pestañas Hoy y Mañana": 'data-stop-day="0"' in html and 'data-stop-day="1"' in html,
+    "marcador del minimapa": "L.circleMarker([latitudParada, longitudParada]" in html,
+}
+fallos_ui = [nombre for nombre, correcto in validaciones_ui.items() if not correcto]
+if fallos_ui:
+    raise SystemExit("No se aplicaron estos cambios de la ficha de parada: " + ", ".join(fallos_ui))
+
 template_path.write_text(html, encoding='utf-8')
 print('Configuración aplicada: T05 exclusiva, mapa inicial, tres líneas y ficha de paradas con horarios.')
