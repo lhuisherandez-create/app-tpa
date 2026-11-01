@@ -1,20 +1,20 @@
 # App TPA Aragón · Concesión T05
 
-Aplicación web móvil para consultar exclusivamente la concesión T05 y sus tres líneas: T05-01, T05-20 y T05-50.
+Aplicación web móvil dedicada exclusivamente a la concesión T05 y a las líneas T05-01, T05-20 y T05-50.
 
-## Menús y flujo de uso
+## Pantallas
 
-- **Inicio:** abre el mapa con las paradas de T05 y los controles del mapa.
-- **Líneas:** muestra un buscador y únicamente T05-01, T05-20 y T05-50.
-- Al abrir una línea aparecen sus sentidos **Ida** y **Vuelta**.
-- Al elegir un sentido se muestra el mapa del recorrido y la lista vertical de paradas en orden GTFS.
-- Al pulsar una parada desde el mapa, el recorrido o la lista se abre la misma ficha inferior.
-- La ficha presenta, en este orden, un minimapa de ubicación, selector **Hoy/Mañana**, nombre de la parada, selector de las líneas que la sirven y llegadas programadas/predicciones en tiempo real si están disponibles.
-- Se mantienen los favoritos.
+- **Inicio:** cabecera TPA / Gobierno de Aragón, franja de transporte, mapa de paradas y navegación inferior.
+- **Líneas:** buscador y listado únicamente de T05-01, T05-20 y T05-50.
+- **Ida / Vuelta:** cada línea muestra los dos sentidos disponibles en el GTFS.
+- **Recorrido:** mapa del sentido seleccionado y lista vertical de paradas ordenadas.
+- **Parada:** pantalla completa con minimapa de ubicación, pestañas Hoy/Mañana, nombre, selector de las líneas que paran allí y llegadas programadas/predicciones en tiempo real cuando el feed las proporciona.
+
+La misma pantalla de parada se abre desde los marcadores del mapa, el mapa del recorrido y la lista de paradas. Se reutiliza el motor de horarios y tiempo real de la aplicación original; la interfaz móvil no crea datos de llegada ficticios.
 
 ## Despliegue en Render
 
-El proyecto original se conserva en `mapa-tpa-main (1).zip`. El script `render_setup.py` extrae el proyecto en cada build, prepara la API de recorridos T05 e instala la navegación móvil integrada en la plantilla original en los estáticos Flask.
+El ZIP original se conserva como `mapa-tpa-main (1).zip`. En cada build, `render_setup.py` extrae ese proyecto, incorpora el endpoint de recorridos T05, copia `t05-mobile.js` a los estáticos Flask e inserta su referencia en la plantilla original.
 
 1. En Render, selecciona **New + → Blueprint**.
 2. Conecta `lhuisherandez-create/app-tpa`.
@@ -23,12 +23,12 @@ El proyecto original se conserva en `mapa-tpa-main (1).zip`. El script `render_s
 
 ## Comprobaciones automáticas
 
-GitHub Actions ejecuta el mismo script de build que Render, valida la sintaxis JavaScript, compila Python y ejecuta las pruebas del proyecto.
+GitHub Actions ejecuta el mismo build que Render, comprueba la sintaxis de `t05-mobile.js` con Node y compila la aplicación Python.
 
 ## Ejecución local
 
 ```bash
-python render_setup_v2.py
+python render_setup.py
 pip install -r mapa-tpa-main/requirements.txt
 cd mapa-tpa-main
 gunicorn app:app
