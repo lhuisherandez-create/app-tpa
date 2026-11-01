@@ -536,7 +536,7 @@ html = html.replace(
               evento.popup._miniMapaParada?.remove();
               const miniMapa = L.map(miniMapaElemento, {
                 zoomControl: false,
-                attributionControl: false,
+                attributionControl: true,
                 dragging: false,
                 scrollWheelZoom: false,
                 doubleClickZoom: false,
