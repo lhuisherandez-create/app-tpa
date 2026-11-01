@@ -65,7 +65,7 @@ def api_paradas_direccion_t05(nombre_linea, direccion):
     trips = defaultdict(list)
     for row in stop_times:
         row_route = str(row.get('route_id') or '')
-        if route_id is not None and row_route != str(route_id):
+        if route_id is None or row_route != str(route_id):
             continue
         trip_id = str(row.get('trip_id') or '')
         stop_id = str(row.get('stop_id') or '')
