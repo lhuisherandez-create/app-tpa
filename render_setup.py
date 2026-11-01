@@ -275,6 +275,32 @@ html = html.replace(
               maxWidth: window.matchMedia('(max-width: 640px)').matches""", 1
 )
 html = html.replace("fillColor: '#334155', fillOpacity: 1", "fillColor: '#6d1838', fillOpacity: 1", 1)
+html = html.replace(
+"""          const marcador = L.circleMarker([parada.lat, parada.lon], {
+            radius: 5, color: '#ffffff', weight: 2,
+            fillColor: '#6d1838', fillOpacity: 1
+          });""",
+"""          const marcador = L.circleMarker([parada.lat, parada.lon], {
+            radius: window.matchMedia('(max-width: 640px)').matches ? 8 : 5,
+            color: '#ffffff', weight: 2,
+            fillColor: '#6d1838', fillOpacity: 1
+          });""", 1
+)
+html = html.replace(
+"""          marcador.addTo(capasParadas);
+          marcadoresParadas[String(parada.id)] = marcador;""",
+"""          marcador.addTo(capasParadas);
+          // Fallback explícito para el evento táctil en Safari/iOS y Android.
+          marcador.on('click', () => {
+            if (window.matchMedia('(max-width: 640px)').matches) {
+              requestAnimationFrame(() => {
+                if (!marcador.isPopupOpen()) marcador.openPopup();
+              });
+            }
+          });
+          marcadoresParadas[String(parada.id)] = marcador;""", 1
+)
+
 
 # El primer encuadre siempre muestra el conjunto de paradas T05, no solo Zaragoza.
 old_fit = '''        if (!configuracionConcesionActiva?.funciones?.tiempo_real && primeraCarga) {
