@@ -14,7 +14,7 @@ Aplicación web móvil para consultar exclusivamente la concesión T05 y sus tre
 
 ## Despliegue en Render
 
-El proyecto original se conserva en `mapa-tpa-main (1).zip`. El script `render_setup_v2.py` extrae el proyecto en cada build, prepara la API de recorridos T05 e instala la interfaz móvil `t05-mobile.js` en los estáticos Flask.
+El proyecto original se conserva en `mapa-tpa-main (1).zip`. El script `render_setup.py` extrae el proyecto en cada build, prepara la API de recorridos T05 e instala la navegación móvil integrada en la plantilla original en los estáticos Flask.
 
 1. En Render, selecciona **New + → Blueprint**.
 2. Conecta `lhuisherandez-create/app-tpa`.
