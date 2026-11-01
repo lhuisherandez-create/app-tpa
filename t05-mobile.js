@@ -125,11 +125,41 @@
       transform:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;
       padding:0 0 env(safe-area-inset-bottom)!important;background:#f3f4f6!important
     }
-    body.t05-stop-open .t05-mini{
-      height:164px!important;min-height:164px!important;max-height:164px!important;
-      flex:0 0 164px!important;margin:0!important;border:0!important;border-bottom:1px solid #dfe3e7!important;
-      border-radius:0!important
+    body.t05-stop-open .t05-mini-wrap{height:164px!important;min-height:164px!important;max-height:164px!important;flex:0 0 164px!important;position:relative!important;overflow:hidden!important;background:#e8ecee!important}
+    body.t05-stop-open .t05-mini{height:100%!important;min-height:100%!important;max-height:100%!important;flex:1 1 auto!important;margin:0!important;border:0!important;border-radius:0!important}
+    body.t05-stop-open .t05-map-caption{position:absolute;left:10px;top:10px;z-index:500;display:inline-flex;align-items:center;gap:5px;padding:6px 8px;border-radius:4px;background:#ffffffed;color:#4b525a;font-size:8px;font-weight:800;letter-spacing:.35px;box-shadow:0 1px 5px #0002}
+    body.t05-stop-open .t05-stop-head{min-height:55px!important;padding:8px 12px!important;background:#fff!important;border-bottom:1px solid #eceef0!important}
+    body.t05-stop-open .t05-stop-title{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+    body.t05-stop-open .t05-stop-title small{font-size:8px;letter-spacing:.55px;color:#8a9098;font-weight:800}
+    body.t05-stop-open .t05-stop-head strong{font-size:14px!important;line-height:1.25;font-weight:800!important}
+    body.t05-stop-open .t05-section-label{padding:8px 12px 4px;background:#fff;color:#878e96;font-size:8px;font-weight:800;letter-spacing:.45px}
+    body.t05-stop-open .t05-chips{padding:4px 10px 9px!important;background:#fff!important;flex:0 0 auto!important}
+    body.t05-stop-open .t05-chip{min-height:29px!important;padding:0 11px;border-radius:3px;font-size:10px!important}
+    body.t05-stop-open .t05-arr-head{min-height:57px;padding:8px 12px!important;background:#fff!important;border-top:1px solid #e5e7e9!important;align-items:center}
+    body.t05-stop-open .t05-arr-title{display:flex;flex-direction:column;gap:3px}
+    body.t05-stop-open .t05-arr-title strong{font-size:12px!important;font-weight:800}
+    body.t05-stop-open .t05-arr-title small{font-size:8px;color:#9298a0}
+    body.t05-stop-open .t05-days{display:flex;border:1px solid #e4e6e9;border-radius:4px;overflow:hidden;gap:0}
+    body.t05-stop-open .t05-days button{height:31px!important;min-width:59px!important;padding:0 9px;border:0;border-radius:0;font-size:10px!important;background:#fff;color:#6e757e}
+    body.t05-stop-open .t05-days button.active{background:#f3e9ed!important;color:#6d1838!important;font-weight:800;border-bottom:2px solid #6d1838}
+    body.t05-stop-open .t05-selected-date{padding:7px 12px;background:#fbf7f8;color:#6d1838;font-size:10px;font-weight:800}
+    body.t05-stop-open .t05-selected-date[hidden]{display:none!important}
+    body.t05-stop-open .t05-arrivals{
+      display:block!important;flex:1 1 auto!important;min-height:0!important;max-height:none!important;
+      overflow-y:auto!important;padding:0 12px 20px!important;background:#fff!important;
+      -webkit-overflow-scrolling:touch
     }
+    body.t05-stop-open .t05-arrivals .stop-schedule-summary{padding:8px 0;color:#737b85;font-size:9px}
+    body.t05-stop-open .t05-arrivals .stop-schedule-group{padding:10px 2px!important}
+    body.t05-stop-open .t05-arrivals .stop-schedule-heading{gap:6px}
+    body.t05-stop-open .t05-arrivals .stop-schedule-line{padding:4px 7px;border-radius:3px;font-size:10px!important}
+    body.t05-stop-open .t05-arrivals .stop-schedule-destination{font-size:10px!important}
+    body.t05-stop-open .t05-arrivals .stop-schedule-time{min-width:62px!important;padding:7px 9px!important}
+    body.t05-stop-open .t05-arrivals .stop-schedule-time strong{font-size:13px!important}
+    body.t05-stop-open .t05-arrivals .stop-next-service-button{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin:12px 0 6px;padding:11px 12px;border:1px solid #6d1838;border-radius:4px;background:#6d1838;color:#fff;font-size:11px;font-weight:800;cursor:pointer}
+    body.t05-stop-open .t05-arrivals .stop-next-service-button:active{background:#54112b}
+    body.t05-stop-open .t05-arrivals .stop-arrival-state{font-size:10px;line-height:1.5;padding:10px 0;color:#68717a}
+    body.t05-stop-open .t05-route-error{margin:0;padding:10px 12px;background:#fff}
     body.t05-stop-open .t05-stop-head{min-height:49px!important;padding:8px 12px!important;background:#fff!important}
     body.t05-stop-open .t05-stop-head strong{font-size:14px!important}
     body.t05-stop-open .t05-chips{padding:7px 10px 9px!important;background:#fff!important;flex:0 0 auto!important}
@@ -212,19 +242,21 @@
     sheet=document.createElement('section');sheet.id='t05-sheet';sheet.className='t05-sheet';
     const served=[...new Set((s.lineas||[]).filter(x=>LINES[x]))].sort();
     const routes=served.length?served:(line?[line]:[]);
-    sheet.innerHTML=`<div class="t05-mini" id="t05-mini" aria-label="Mapa de ubicación de la parada"></div>
-      <div class="t05-stop-head"><strong>${esc(s.name)}</strong><div class="t05-stop-actions">
+    sheet.innerHTML=`<div class="t05-mini-wrap"><div class="t05-mini" id="t05-mini" aria-label="Mapa de ubicación de la parada"></div><span class="t05-map-caption"><i class="fa-solid fa-location-dot"></i> UBICACIÓN DE LA PARADA</span></div>
+      <div class="t05-stop-head"><div class="t05-stop-title"><small>PARADA</small><strong>${esc(s.name)}</strong></div><div class="t05-stop-actions">
         <button class="t05-icon" type="button" data-close aria-label="Cerrar ficha"><i class="fa-solid fa-xmark"></i></button>
         <button class="t05-icon" type="button" data-refresh aria-label="Actualizar llegadas"><i class="fa-solid fa-rotate"></i></button>
         <button class="t05-icon" type="button" data-center aria-label="Centrar ubicación"><i class="fa-solid fa-location-crosshairs"></i></button>
         <button class="t05-icon" type="button" data-fav aria-label="Guardar parada"><i class="fa-regular fa-star"></i></button>
       </div></div>
+      <div class="t05-section-label">LÍNEAS QUE PARAN AQUÍ</div>
       <div class="t05-chips" aria-label="Líneas que paran aquí">
         ${routes.length ? routes.map(x=>`<button class="t05-chip" data-chip="${x}" style="--chip:${LINES[x][1]}">${x}</button>`).join('') : '<span class="t05-empty-lines">No hay líneas identificadas</span>'}
       </div>
-      <div class="t05-arr-head"><strong>Llegadas programadas / en tiempo real</strong>
-        <div class="t05-days" role="tablist" aria-label="Día de consulta"><button class="active" data-day="0">Hoy</button><button data-day="1">Mañana</button></div>
+      <div class="t05-arr-head"><div class="t05-arr-title"><strong>Próximas salidas</strong><small>Horario oficial y tiempo real</small></div>
+        <div class="t05-days" role="tablist" aria-label="Día de consulta"><button class="active" data-day="0" aria-pressed="true">Hoy</button><button data-day="1" aria-pressed="false">Mañana</button></div>
       </div>
+      <div class="t05-selected-date" data-selected-date aria-live="polite" hidden></div>
       <input type="date" class="stop-date-input t05-date" aria-label="Fecha de consulta">
       <div class="t05-arrivals"><div class="llegadas-parada stop-arrival-state">Consultando horarios…</div></div>`;
     document.body.append(sheet);
@@ -236,15 +268,38 @@
       if(typeof alternarFavorito==='function')alternarFavorito(s);
       saved=!saved;favorite.innerHTML=saved?'<i class="fa-solid fa-star"></i>':'<i class="fa-regular fa-star"></i>';
     });
-    const today=typeof fechaLocalISO==='function'?fechaLocalISO():new Date().toISOString().slice(0,10);
+    const today=typeof fechaLocalISO==='function'?fechaLocalISO():(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})();
+    const tomorrow=typeof desplazarFechaISO==='function'?desplazarFechaISO(today,1):today;
     const date=sheet.querySelector('.stop-date-input');date.min=today;date.value=today;
-    adapter={_solicitudLlegadasParada:0,_lineaFiltroActiva:'',getElement:()=>$('#t05-sheet')};
+    const dayButtons=[...sheet.querySelectorAll('[data-day]')];
+    const selectedDateLabel=sheet.querySelector('[data-selected-date]');
+    const syncSelectedDate=fecha=>{
+      date.value=fecha;
+      const selectedOffset=fecha===today?'0':fecha===tomorrow?'1':'';
+      dayButtons.forEach(button=>{
+        const active=selectedOffset!==''&&button.dataset.day===selectedOffset;
+        button.classList.toggle('active',active);
+        button.setAttribute('aria-pressed',active?'true':'false');
+      });
+      if(selectedDateLabel){
+        if(selectedOffset===''){
+          const readable=typeof formatearFechaServicio==='function'?formatearFechaServicio(fecha):fecha;
+          selectedDateLabel.textContent='Próximo servicio · '+readable;
+          selectedDateLabel.hidden=false;
+        }else{
+          selectedDateLabel.textContent='';
+          selectedDateLabel.hidden=true;
+        }
+      }
+    };
+    adapter={_solicitudLlegadasParada:0,_lineaFiltroActiva:'',getElement:()=>$('#t05-sheet'),_onFechaSeleccionada:syncSelectedDate};
     const load=()=>{if(typeof cargarLlegadasParada==='function')cargarLlegadasParada(s.id,adapter,date.value,ids(s),adapter._lineaFiltroActiva)};
-    sheet.querySelectorAll('[data-day]').forEach(b=>b.addEventListener('click',()=>{
-      sheet.querySelectorAll('[data-day]').forEach(x=>x.classList.toggle('active',x===b));
-      date.value=typeof desplazarFechaISO==='function'?desplazarFechaISO(today,+b.dataset.day):today;load();
+    dayButtons.forEach(button=>button.addEventListener('click',()=>{
+      const fecha=typeof desplazarFechaISO==='function'?desplazarFechaISO(today,+button.dataset.day):(+button.dataset.day===0?today:tomorrow);
+      syncSelectedDate(fecha);load();
     }));
-    date.addEventListener('change',load);
+    date.addEventListener('change',()=>{syncSelectedDate(date.value);load()});
+    syncSelectedDate(today);
     sheet.querySelectorAll('[data-chip]').forEach(b=>b.addEventListener('click',()=>{
       adapter._lineaFiltroActiva=adapter._lineaFiltroActiva===b.dataset.chip?'':b.dataset.chip;
       sheet.querySelectorAll('[data-chip]').forEach(x=>x.classList.toggle('active',x.dataset.chip===adapter._lineaFiltroActiva));
