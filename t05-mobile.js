@@ -114,6 +114,45 @@
     @media(max-width:480px){.t05-sheet{max-height:72dvh;min-height:280px}.t05-mini{height:108px;flex-basis:108px}}
     @media(min-width:700px){.t05-sheet{left:50%;right:auto;width:520px;transform:translateX(-50%)}}
 
+
+    /* Ficha de parada a pantalla completa: mapa arriba y contenido hasta el borde inferior. */
+    body.t05-stop-open #t05-nav{display:none!important}
+    body.t05-stop-open .t05-sheet{
+      position:fixed!important;z-index:25000!important;inset:58px 0 0!important;
+      left:0!important;right:0!important;top:58px!important;bottom:0!important;
+      width:auto!important;height:auto!important;max-height:none!important;min-height:0!important;
+      display:flex!important;flex-direction:column!important;overflow:hidden!important;
+      transform:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+      padding:0 0 env(safe-area-inset-bottom)!important;background:#f3f4f6!important
+    }
+    body.t05-stop-open .t05-mini{
+      height:164px!important;min-height:164px!important;max-height:164px!important;
+      flex:0 0 164px!important;margin:0!important;border:0!important;border-bottom:1px solid #dfe3e7!important;
+      border-radius:0!important
+    }
+    body.t05-stop-open .t05-stop-head{min-height:49px!important;padding:8px 12px!important;background:#fff!important}
+    body.t05-stop-open .t05-stop-head strong{font-size:14px!important}
+    body.t05-stop-open .t05-chips{padding:7px 10px 9px!important;background:#fff!important;flex:0 0 auto!important}
+    body.t05-stop-open .t05-chip{min-height:29px!important;font-size:10px!important}
+    body.t05-stop-open .t05-arr-head{padding:10px 12px 8px!important;background:#fff!important;border-top:1px solid #e5e7e9!important}
+    body.t05-stop-open .t05-arr-head strong{font-size:11px!important}
+    body.t05-stop-open .t05-days button{height:29px!important;min-width:57px!important;font-size:10px!important}
+    body.t05-stop-open .t05-arrivals{
+      display:block!important;flex:1 1 auto!important;min-height:0!important;max-height:none!important;
+      overflow-y:auto!important;padding:0 12px 20px!important;background:#fff!important;
+      -webkit-overflow-scrolling:touch
+    }
+    body.t05-stop-open .t05-arrivals .stop-schedule-group{padding:10px 2px!important}
+    body.t05-stop-open .t05-arrivals .stop-schedule-time{min-width:62px!important;padding:7px 9px!important}
+    body.t05-stop-open .t05-arrivals .stop-schedule-time strong{font-size:13px!important}
+    body.t05-stop-open .t05-route-error{margin:0;padding:10px 12px;background:#fff}
+    body.t05-stop-open #t05-top{z-index:30000!important}
+    .t05-screen,.t05-screen *{box-sizing:border-box}
+    .t05-screen{background:#f3f4f6!important;color:#252930}
+    .t05-route,.t05-dir button,.t05-stop-row{font-family:inherit}
+    .t05-route:active,.t05-dir button:active,.t05-stop-row:active{background:#f5f1f3}
+    .t05-route-error{line-height:1.4}
+
   `;
   function shell(){
     const st=document.createElement('style');st.textContent=css;document.head.append(st);
@@ -156,7 +195,7 @@
     if(p==='inicio'&&typeof map!=='undefined')setTimeout(()=>map.invalidateSize(),120);
   }
   function resetLine(){if(routeMap){routeMap.remove();routeMap=null}$('#t05-index').hidden=false;$('#t05-directions').hidden=true;$('#t05-route-screen').hidden=true;currentSub='index';setHeaderBack(false)}
-  async function openLine(c){line=c;currentSub='directions';setHeaderBack(true);$('#t05-index').hidden=true;$('#t05-directions').hidden=false;$('#t05-route-screen').hidden=true;$('#t05-line-title').textContent=c+'  '+LINES[c][0];$('#t05-ida').textContent='Cargando…';$('#t05-vuelta').textContent='Cargando…';try{const load=async d=>{const response=await fetch('/api/t05-linea/'+encodeURIComponent(c)+'/'+d,{cache:'no-store'});let data;try{data=await response.json()}catch(_){throw Error('La API de recorridos devolvió una respuesta no válida ('+response.status+')')}if(!response.ok)throw Error(data.error||('Error '+response.status));if(data.error)throw Error(data.error);if(!Array.isArray(data.stops)||!data.stops.length)throw Error('No hay paradas GTFS para '+c+' ('+d+')');return data};const [a,v]=await Promise.all([load('ida'),load('vuelta')]);route={ida:a,vuelta:v};$('#t05-ida').textContent=(a.origen||'Origen')+' - '+(a.destino||'Destino');$('#t05-vuelta').textContent=(v.origen||'Origen')+' - '+(v.destino||'Destino')}catch(e){$('#t05-ida').textContent='Error al cargar';$('#t05-vuelta').textContent='Error al cargar';$('#t05-directions').insertAdjacentHTML('beforeend','<p class="t05-route-error">'+esc(e.message)+'</p>');console.error('Error cargando '+c,e)}}
+  async function openLine(c){line=c;currentSub='directions';setHeaderBack(true);$('#t05-index').hidden=true;$('#t05-directions').hidden=false;$('#t05-route-screen').hidden=true;$('#t05-line-title').textContent=c+'  '+LINES[c][0];$('#t05-ida').textContent='Cargando…';$('#t05-vuelta').textContent='Cargando…';const prior=$('#t05-directions .t05-route-error');prior?.remove();route={};const load=async d=>{const response=await fetch('/api/t05-linea/'+encodeURIComponent(c)+'/'+d,{cache:'no-store',headers:{'Accept':'application/json'}});const raw=await response.text();let data;try{data=JSON.parse(raw)}catch(_){const preview=raw.replace(/\\s+/g,' ').slice(0,150);throw Error('Respuesta no JSON del servidor (HTTP '+response.status+', '+(response.headers.get('content-type')||'sin tipo')+'). '+preview)}if(!response.ok)throw Error(data.error||('Error HTTP '+response.status));if(data.error)throw Error(data.error);if(!Array.isArray(data.stops)||!data.stops.length)throw Error('La API no encontró paradas para '+c+' ('+d+'). '+(data.debug?JSON.stringify(data.debug):''));return data};const results=await Promise.allSettled([load('ida'),load('vuelta')]);const errors=[];for(const [i,d] of ['ida','vuelta'].entries()){const target=i===0?$('#t05-ida'):$('#t05-vuelta');const result=results[i];if(result.status==='fulfilled'){route[d]=result.value;target.textContent=(result.value.origen||'Origen')+' - '+(result.value.destino||'Destino')}else{target.textContent='Error al cargar';errors.push((d==='ida'?'Ida: ':'Vuelta: ')+result.reason.message);console.error('Error cargando '+c+' '+d,result.reason)}}if(errors.length)$('#t05-directions').insertAdjacentHTML('beforeend','<p class="t05-route-error">'+esc(errors.join(' · '))+'</p>')
   function openDirection(d){if(!route?.[d])return;direction=d;currentSub='route';setHeaderBack(true);const r=route[d];$('#t05-directions').hidden=true;$('#t05-route-screen').hidden=false;$('#t05-route-title').textContent=line+' · '+(d==='ida'?'Ida':'Vuelta');$('#t05-route-subtitle').textContent=r.origen+' - '+r.destino;$('#t05-route-stops').innerHTML=(r.stops||[]).map((s,i)=>`<button class="t05-stop-row" data-route-stop="${i}"><span class="t05-track"><span class="t05-dot"></span></span><span class="t05-stop-name">${esc(s.name)}</span><i class="fa-solid fa-chevron-right"></i></button>`).join('');if(routeMap)routeMap.remove();routeMap=L.map('t05-route-map',{zoomControl:false,scrollWheelZoom:false});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap'}).addTo(routeMap);const layers=[];if(r.shape?.length>1)layers.push(L.polyline(r.shape,{color:LINES[line][1],weight:4}).addTo(routeMap));(r.stops||[]).forEach(s=>{if(s.lat!==null&&s.lon!==null&&s.lat!==''&&s.lon!==''&&Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lon))){const m=L.circleMarker([+s.lat,+s.lon],{radius:5,color:'#fff',weight:2,fillColor:'#6d1838',fillOpacity:1}).addTo(routeMap);m.on('click',e=>{L.DomEvent.stop(e);openStop(s)});layers.push(m)}});if(layers.length)routeMap.fitBounds(L.featureGroup(layers).getBounds(),{padding:[12,12],maxZoom:11});setTimeout(()=>routeMap?.invalidateSize(),100)}
   function lineClick(e){const b=e.target.closest('[data-back]');if(b){if(b.dataset.back==='index')resetLine();else{if(routeMap){routeMap.remove();routeMap=null}$('#t05-route-screen').hidden=true;$('#t05-directions').hidden=false}return}const l=e.target.closest('[data-line]');if(l){openLine(l.dataset.line);return}const d=e.target.closest('[data-direction]');if(d){openDirection(d.dataset.direction);return}const s=e.target.closest('[data-route-stop]');if(s)openStop(route?.[direction]?.stops?.[+s.dataset.routeStop])}
   function findStop(s){const all=typeof listaParadas!=='undefined'?listaParadas:[];const set=new Set(ids(s));return all.find(x=>String(x.id)===String(s.id)||ids(x).some(id=>set.has(id)))?{...s,...all.find(x=>String(x.id)===String(s.id)||ids(x).some(id=>set.has(id)))}:s}
@@ -164,12 +203,12 @@
     if(refresh){clearInterval(refresh);refresh=null}
     if(adapter)adapter._solicitudLlegadasParada=(adapter._solicitudLlegadasParada||0)+1;
     if(sheetMap){sheetMap.remove();sheetMap=null}
-    $('#t05-sheet')?.remove();$('#t05-shade')?.remove();sheet=null;adapter=null;
+    $('#t05-sheet')?.remove();$('#t05-shade')?.remove();sheet=null;adapter=null;document.body.classList.remove('t05-stop-open');
     setHeaderBack(currentPage==='lineas'&&currentSub!=='index');
   }
   function openStop(s){
     if(!s)return;
-    closeSheet();s=findStop(s);
+    closeSheet();s=findStop(s);document.body.classList.add('t05-stop-open');
     sheet=document.createElement('section');sheet.id='t05-sheet';sheet.className='t05-sheet';
     const served=[...new Set((s.lineas||[]).filter(x=>LINES[x]))].sort();
     const routes=served.length?served:(line?[line]:[]);
