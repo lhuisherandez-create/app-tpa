@@ -28,6 +28,62 @@
     .t05-shade{position:fixed;z-index:24000;inset:58px 0 58px;background:#17202a24}.t05-sheet{position:fixed;z-index:25000;left:0;right:0;bottom:58px;max-height:75dvh;min-height:350px;display:flex;flex-direction:column;overflow:hidden;background:white;border-radius:13px 13px 0 0;box-shadow:0 -4px 20px #0003;padding-bottom:env(safe-area-inset-bottom)}.t05-grab{width:34px;height:4px;margin:7px auto 5px;background:#cfd3d8;border-radius:4px}.t05-mini{height:110px;flex:0 0 110px;margin:0 9px 8px;border:1px solid #e4e7ea;border-radius:6px;overflow:hidden;background:#e9edef}.t05-stop-head{display:flex;align-items:center;gap:8px;padding:0 12px 8px}.t05-stop-head strong{flex:1;font-size:13px;line-height:1.25}.t05-icon{width:29px;height:28px;border:1px solid #e2e5e8;border-radius:5px;background:white;color:#555}.t05-label{display:block;padding:4px 12px 5px;font-size:9px;letter-spacing:.3px;text-transform:uppercase;font-weight:800;color:#818891}.t05-chips{display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 9px;border-bottom:1px solid #eceef0}.t05-chip{min-height:27px;padding:0 9px;border:1px solid #e0e3e7;border-radius:4px;background:white;color:#505861;font-size:10px;font-weight:800}.t05-chip.active{background:var(--chip);border-color:var(--chip);color:white}.t05-arr-head{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:8px 12px 5px}.t05-arr-head strong{font-size:11px}.t05-days{display:flex;gap:4px}.t05-days button{height:25px;min-width:52px;border:1px solid #e0e4e8;border-radius:4px;background:white;color:#666e77;font-size:9px;font-weight:700}.t05-days .active{background:#f4e9ed;color:var(--wine);border-color:#d8bdc7}.t05-arrivals{flex:1;overflow-y:auto;padding:0 12px 10px}.t05-arrivals .stop-schedule-group{padding:7px 0!important;border-top:1px solid #eceef0}.t05-arrivals .stop-schedule-line{font-size:10px!important;font-weight:800}.t05-arrivals .stop-schedule-destination{font-size:10px!important}.t05-arrivals .stop-schedule-times{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}.t05-arrivals .stop-schedule-time{min-width:55px;padding:5px 7px!important;background:#f3f4f6!important;border-radius:4px!important}.t05-arrivals .stop-schedule-time.live{background:#eaf7ef!important}.t05-arrivals .stop-schedule-time strong{font-size:12px!important}.t05-arrivals .stop-schedule-time small{font-size:8px!important}.t05-date{display:none!important}
     @media(min-width:700px){.t05-screen{left:50%;right:auto;width:520px;transform:translateX(-50%);border:1px solid #e5e7ea}.t05-sheet{left:50%;right:auto;width:520px;transform:translateX(-50%);border:1px solid #e5e7ea}}
     @media(max-width:480px){.t05-sheet{max-height:77dvh;min-height:340px}.t05-mini{height:102px;flex-basis:102px}.t05-map-route{height:190px}}
+
+    /* Replica móvil: cabecera, franja superior, mapa, lista de líneas y ficha completa. */
+    #t05-top{height:58px;padding:0 12px;flex-direction:row;align-items:center;justify-content:space-between}
+    #t05-header-back{width:27px;height:32px;border:0;background:transparent;color:#252930;font-size:17px;padding:0;margin-right:7px}
+    #t05-header-back[hidden]{display:none!important}
+    .t05-brand{display:flex;align-items:center;gap:8px;flex:1}
+    .t05-brand strong{font-size:19px;line-height:1;font-weight:900;letter-spacing:-.6px}
+    .t05-brand small{font-size:9px;font-weight:800;line-height:1.05;letter-spacing:.25px;color:#424951}
+    .t05-bell{width:32px;height:32px;border:0;background:transparent;color:#252930;font-size:16px}
+    #t05-home-banner{position:fixed;z-index:2;top:58px;left:0;right:0;height:78px;overflow:hidden;background:linear-gradient(115deg,#294c42,#8caa72 50%,#344c39)}
+    .t05-banner-land{position:absolute;inset:0;background:linear-gradient(165deg,transparent 45%,#203d2d 46%,#203d2d 50%,transparent 51%),linear-gradient(15deg,transparent 52%,#66805a 53%,#66805a 58%,transparent 59%);opacity:.8}
+    .t05-banner-bus{position:absolute;width:min(88%,360px);height:68px;left:50%;top:5px;transform:translateX(-50%);filter:drop-shadow(0 3px 2px #0005)}
+    body.t05-home-active #map{top:136px!important}
+    body.t05-home-active #header-card{top:145px!important}
+    body.t05-home-active #t05-home-banner{display:block}
+    body:not(.t05-home-active) #t05-home-banner{display:none}
+    #header-card .map-tools{position:absolute!important;top:0!important;right:0!important;left:auto!important;width:auto!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;pointer-events:none!important}
+    #header-card .stop-search-row{display:flex!important;flex-direction:column!important;align-items:center!important;gap:7px!important;pointer-events:none!important}
+    #buscador-paradas{display:none!important}
+    #btn-paradas-cercanas,#btn-mostrar-favoritos{display:flex!important;width:33px!important;height:33px!important;min-width:33px!important;align-items:center!important;justify-content:center!important;padding:0!important;border:1px solid #e0e4e7!important;border-radius:50%!important;background:#fff!important;color:#313840!important;box-shadow:0 2px 6px #0002!important;pointer-events:auto!important}
+    #btn-mostrar-favoritos span:not(.favorite-count){display:none!important}
+    .t05-route{min-height:45px;padding:5px 8px;gap:9px}
+    .t05-stripe{width:5px;height:33px}
+    .t05-code{width:51px;font-size:10px}
+    .t05-name{font-size:10px;font-weight:700}
+    .t05-dir-label{padding:7px;background:#d9d9d9;text-align:center;color:#30343a;font-size:10px;font-weight:700}
+    .t05-dir button{min-height:41px;font-size:10px;font-weight:600}
+    .t05-map-route{height:215px}
+    .t05-timeline{padding:4px 0 10px}
+    .t05-stop-row{min-height:39px}
+    .t05-shade{display:none!important}
+    .t05-sheet{position:fixed;z-index:22000;inset:58px 0 58px;left:0;right:0;top:58px;bottom:58px;width:auto;max-height:none;min-height:0;border-radius:0;box-shadow:none;padding:0;overflow-y:auto;display:block;background:#f3f4f6}
+    .t05-grab{display:none}
+    .t05-mini{height:190px;flex:none;margin:0;border:0;border-radius:0;border-bottom:1px solid #dfe3e7}
+    .t05-days{height:39px;background:#fff;border-bottom:1px solid #e2e4e7;display:flex;gap:0;padding:0}
+    .t05-days button{flex:1;height:39px;border:0;border-bottom:2px solid transparent;border-radius:0;background:#fff;font-size:10px;color:#757c84}
+    .t05-days button.active{background:#fff;color:#6d1838;border-bottom-color:#6d1838}
+    .t05-stop-head{min-height:43px;padding:7px 10px 5px;background:#f3f4f6}
+    .t05-stop-head strong{font-size:13px;font-weight:800}
+    .t05-stop-actions{display:flex;align-items:center;gap:9px}
+    .t05-icon{width:25px;height:26px;border:0;background:transparent;color:#555d66;font-size:14px}
+    .t05-label{display:none}
+    .t05-chips{padding:5px 8px 7px;gap:4px;flex-wrap:nowrap;overflow-x:auto;background:#f3f4f6;border-bottom:0}
+    .t05-chip{flex:0 0 auto;min-height:26px;padding:0 6px;border:1px solid #d8dce0;border-radius:2px;background:#fff;color:#525a63;font-size:9px;font-weight:800}
+    .t05-chip.active{background:var(--chip);border-color:var(--chip);color:#fff}
+    .t05-arr-head{padding:7px 9px 4px;background:#fff;border-top:1px solid #e3e5e8}
+    .t05-arr-head strong{font-size:9px;color:#888f97;font-weight:600}
+    .t05-arrivals{min-height:90px;max-height:none;overflow:visible;padding:0 7px 10px;background:#fff}
+    .t05-arrivals .stop-schedule-group{padding:7px 2px!important;border-bottom:1px solid #e9ebed;border-top:0!important;background:#fff}
+    .t05-arrivals .stop-schedule-line{font-size:10px!important}
+    .t05-arrivals .stop-schedule-destination{font-size:10px!important}
+    .t05-arrivals .stop-schedule-time{min-width:55px;padding:5px 6px!important}
+    .t05-date{display:none!important}
+    @media(max-width:480px){.t05-mini{height:188px}.t05-map-route{height:205px}}
+    @media(min-width:700px){.t05-sheet{left:50%;right:auto;width:520px;transform:translateX(-50%);border-left:1px solid #e6e8ea;border-right:1px solid #e6e8ea}}
+
   `;
   function shell(){
     const st=document.createElement('style');st.textContent=css;document.head.append(st);
