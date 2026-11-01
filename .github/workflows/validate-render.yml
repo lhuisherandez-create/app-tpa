@@ -25,3 +25,35 @@ jobs:
         run: python -m pip install -r mapa-tpa-main/requirements.txt
       - name: Compile Python application
         run: python -m compileall -q mapa-tpa-main
+      - name: Test all six T05 routes against the bundled GTFS
+        run: |
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, "mapa-tpa-main")
+          from app import app
+
+          expected = {
+              ("T05-01", "ida"): (14, "51d66e5a-5e4f-45e5-96b2-da375c2ff9ee", "8ddaeb32-d3d4-4d85-85b9-b553093d0507"),
+              ("T05-01", "vuelta"): (14, "8ddaeb32-d3d4-4d85-b9-b553093d0507", "51d66e5a-5e4f-45e5-96b2-da375c2ff9ee"),
+              ("T05-20", "ida"): (16, "c1b2fb25-531c-4bdd-8773-b3c0ddbed193", "8ddaeb32-d3d4-4d85-b9-b553093d0507"),
+              ("T05-20", "vuelta"): (16, "8ddaeb32-d3d4-4d85-b9-b553093d0507", "c1b2fb25-531c-4bdd-8773-b3c0ddbed193"),
+              ("T05-50", "ida"): (3, "488caf4b-5751-402f-87c5-1eff39593484", "d47efa35-bf03-4ee4-b0b0-6d557484270a"),
+              ("T05-50", "vuelta"): (3, "d47efa35-bf03-4ee4-b0b0-6d557484270a", "488caf4b-5751-402f-87c5-1eff39593484"),
+          }
+
+          app.testing = True
+          client = app.test_client()
+          for (linea, sentido), (cantidad, primero, ultimo) in expected.items():
+              response = client.get(f"/api/t05-linea/{linea}/{sentido}")
+              assert response.status_code == 200, (linea, sentido, response.status_code, response.get_data(as_text=True))
+              payload = response.get_json()
+              assert isinstance(payload, dict), (linea, sentido, payload)
+              assert "error" not in payload, (linea, sentido, payload.get("error"))
+              paradas = payload.get("stops")
+              assert isinstance(paradas, list) and len(paradas) == cantidad, (linea, sentido, len(paradas or []), payload)
+              secuencias = [p["stop_sequence"] for p in paradas]
+              assert secuencias == list(range(cantidad)), (linea, sentido, secuencias)
+              ids = [p["stop_id_gtfs"] for p in paradas]
+              assert ids[0] == primero and ids[-1] == ultimo, (linea, sentido, ids[0], ids[-1])
+              print(f"OK {linea} {sentido}: {cantidad} paradas en orden GTFS")
+          PY
