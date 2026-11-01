@@ -500,18 +500,35 @@ html = html.replace(
     "async function cargarLlegadasParada(stopId, popup, fecha = fechaLocalISO(), stopIds = null, lineaFiltro = undefined) {", 1
 )
 html = html.replace(
-    "      if (!contenedor) return;\\n\\n      // Solo la consulta del día actual",
-    "      if (!contenedor) return;\\n      if (lineaFiltro !== undefined) popup._lineaFiltroActiva = lineaFiltro;\\n      const filtroLineaActiva = popup._lineaFiltroActiva || '';\\n\\n      // Solo la consulta del día actual", 1
+"""      if (!contenedor) return;
+
+      // Solo la consulta del día actual""",
+"""      if (!contenedor) return;
+      if (lineaFiltro !== undefined) popup._lineaFiltroActiva = lineaFiltro;
+      const filtroLineaActiva = popup._lineaFiltroActiva || '';
+
+      // Solo la consulta del día actual""", 1
 )
 html = html.replace(
-    "        elementos.sort((a, b) => Number(a.timestampMostrado || 0) - Number(b.timestampMostrado || 0));\\n\\n        if (!elementos.length)",
-    "        elementos.sort((a, b) => Number(a.timestampMostrado || 0) - Number(b.timestampMostrado || 0));\\n        if (filtroLineaActiva) {\\n          const filtrados = elementos.filter(item => String(item.linea || '').trim().toUpperCase() === String(filtroLineaActiva).trim().toUpperCase());\\n          elementos.splice(0, elementos.length, ...filtrados);\\n        }\\n\\n        if (!elementos.length)", 1
+"""        elementos.sort((a, b) => Number(a.timestampMostrado || 0) - Number(b.timestampMostrado || 0));
+
+        if (!elementos.length)""",
+"""        elementos.sort((a, b) => Number(a.timestampMostrado || 0) - Number(b.timestampMostrado || 0));
+        if (filtroLineaActiva) {
+          const filtrados = elementos.filter(item =>
+            String(item.linea || '').trim().toUpperCase() === String(filtroLineaActiva).trim().toUpperCase()
+          );
+          elementos.splice(0, elementos.length, ...filtrados);
+        }
+
+        if (!elementos.length)""", 1
 )
 
-
-# El minimapa usa las coordenadas reales de la parada; las llegadas se actualizan por línea.
-const popupOpenAnchor = "            const elemento = evento.popup.getElement();\\n            const selectorFecha = elemento?.querySelector('.stop-date-input');";
-const popupOpenReplacement = """            const elemento = evento.popup.getElement();
+# El minimapa usa las coordenadas reales de la parada.
+html = html.replace(
+"""            const elemento = evento.popup.getElement();
+            const selectorFecha = elemento?.querySelector('.stop-date-input');""",
+"""            const elemento = evento.popup.getElement();
             const miniMapaElemento = elemento?.querySelector('.stop-mini-map');
             const latitudParada = Number(parada.lat);
             const longitudParada = Number(parada.lon);
@@ -535,17 +552,17 @@ const popupOpenReplacement = """            const elemento = evento.popup.getEle
                 radius: 7, color: '#ffffff', weight: 2, fillColor: '#6d1838', fillOpacity: 1
               }).addTo(miniMapa);
               evento.popup._miniMapaParada = miniMapa;
-              L.DomEvent.disableClickPropagation(miniMapaElemento);
               setTimeout(() => miniMapa.invalidateSize(false), 100);
             } else if (miniMapaElemento) {
               miniMapaElemento.innerHTML = '<span class="stop-mini-map-missing">Ubicación no disponible</span>';
             }
+            const selectorFecha = elemento?.querySelector('.stop-date-input');""", 1
+)
 
-            const selectorFecha = elemento?.querySelector('.stop-date-input');""";
-html = html.replace(popupOpenAnchor, popupOpenReplacement, 1);
-
-const lineFilterAnchor = "            const botonFavorito = elemento?.querySelector('.stop-favorite-button');";
-const lineFilterReplacement = """            evento.popup._lineaFiltroActiva = '';
+# Selector de línea: "Todas" o una ruta concreta T05.
+html = html.replace(
+"""            const botonFavorito = elemento?.querySelector('.stop-favorite-button');""",
+"""            evento.popup._lineaFiltroActiva = '';
             const filtrosLinea = Array.from(elemento?.querySelectorAll('[data-linea-filtro]') || []);
             filtrosLinea.forEach(boton => {
               boton.addEventListener('click', (click) => {
@@ -562,17 +579,24 @@ const lineFilterReplacement = """            evento.popup._lineaFiltroActiva = '
               });
             });
 
-            const botonFavorito = elemento?.querySelector('.stop-favorite-button');""";
-html = html.replace(lineFilterAnchor, lineFilterReplacement, 1);
+            const botonFavorito = elemento?.querySelector('.stop-favorite-button');""", 1
+)
 
-const intervalAnchor = "                cargarLlegadasParada(parada.id, evento.popup, fechaActual, parada.stop_ids);";
-const intervalReplacement = "                cargarLlegadasParada(parada.id, evento.popup, fechaActual, parada.stop_ids, evento.popup._lineaFiltroActiva || '');";
-html = html.replace(intervalAnchor, intervalReplacement, 1);
+# Mantener filtro de línea durante la actualización automática.
+html = html.replace(
+    "                cargarLlegadasParada(parada.id, evento.popup, fechaActual, parada.stop_ids);",
+    "                cargarLlegadasParada(parada.id, evento.popup, fechaActual, parada.stop_ids, evento.popup._lineaFiltroActiva || '');", 1
+)
 
-const closeAnchor = "            if (eventoCierre.popup) {\\n              eventoCierre.popup._solicitudLlegadasParada =";
-const closeReplacement = "            if (eventoCierre.popup) {\\n              eventoCierre.popup._miniMapaParada?.remove();\\n              eventoCierre.popup._miniMapaParada = null;\\n              eventoCierre.popup._solicitudLlegadasParada =";
-html = html.replace(closeAnchor, closeReplacement, 1);
-
+# Cerrar el minimapa auxiliar al cerrar la ficha para liberar la instancia Leaflet.
+html = html.replace(
+"""            if (eventoCierre.popup) {
+              eventoCierre.popup._solicitudLlegadasParada =""",
+"""            if (eventoCierre.popup) {
+              eventoCierre.popup._miniMapaParada?.remove();
+              eventoCierre.popup._miniMapaParada = null;
+              eventoCierre.popup._solicitudLlegadasParada =""", 1
+)
 
 template_path.write_text(html, encoding='utf-8')
 print('Configuración aplicada: T05 exclusiva, mapa inicial, tres líneas y ficha de paradas con horarios.')
