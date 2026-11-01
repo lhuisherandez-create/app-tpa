@@ -2,7 +2,13 @@ services:
   - type: web
     name: app-tpa
     runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    plan: free
+    buildCommand: |
+      python -c "import zipfile; zipfile.ZipFile('mapa-tpa-main (1).zip').extractall('.')" &&
+      pip install -r mapa-tpa-main/requirements.txt
+    startCommand: cd mapa-tpa-main && gunicorn app:app --workers 1 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT
     healthCheckPath: /
     autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
