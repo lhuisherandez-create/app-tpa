@@ -87,6 +87,17 @@ if sort_old in html:
 elif sort_new not in html:
     raise SystemExit("No se pudo integrar el filtrado de las llegadas por línea.")
 
+# Ocultar el contenido heredado desde el primer render hasta que arranque T05.
+html_start = html.lower().find("<html")
+html_end = html.find(">", html_start) if html_start >= 0 else -1
+if html_end >= 0:
+    html_open_tag = html[html_start:html_end + 1]
+    if "data-t05-boot" not in html_open_tag:
+        html = html[:html_end] + ' data-t05-boot="1"' + html[html_end:]
+if 'id="t05-boot-style"' not in html:
+    boot_css = '<style id="t05-boot-style">html[data-t05-boot="1"] body{visibility:hidden!important}</style>'
+    html = html.replace("</head>", boot_css + "</head>", 1)
+
 # Cargar la aplicación móvil después de los scripts originales, para reutilizar el mapa y sus datos.
 script_tag = """  <script src="{{ url_for('static', filename='t05-mobile.js') }}?v=11"></script>
 """
