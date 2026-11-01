@@ -27,7 +27,7 @@ anchor = "@app.route('/api/concesiones')\ndef get_concesiones():"
 
 endpoint = '''@app.route('/api/t05-linea/<nombre_linea>/<direccion>')
 def api_paradas_direccion_t05(nombre_linea, direccion):
-    """Devuelve las paradas y el trazado de ida/vuelta de una línea T05 desde GTFS."""
+    """Devuelve un recorrido T05 para ambos sentidos, con fallback al catálogo GTFS."""
     nombre = str(nombre_linea or '').upper()
     sentido = str(direccion or '').lower()
     lineas_t05 = {'T05-01', 'T05-20', 'T05-50'}
@@ -35,123 +35,150 @@ def api_paradas_direccion_t05(nombre_linea, direccion):
         return jsonify({"error": "Línea o sentido no reconocido", "stops": []}), 404
 
     dataset = obtener_dataset_gtfs('T05')
-    mapa = dataset['map']
-    ruta_id = next((
-        route_id for route_id, info in mapa.get('routes', {}).items()
-        if str(info.get('short_name', '')).upper() == nombre
+    mapa = dataset.get('map') or {}
+    routes = mapa.get('routes') or {}
+    route_id = next((
+        rid for rid, info in routes.items()
+        if str(info.get('short_name') or info.get('route_short_name') or '').upper() == nombre
+        or str(rid).upper() == nombre
     ), None)
-    if not ruta_id:
-        return jsonify({"error": "No hay datos GTFS para esta línea", "stops": []}), 404
+    schedule = dataset.get('schedule') or {}
+    stop_times = schedule.get('stop_times') or []
 
-    # Indexar cada stop_id GTFS con el marcador agrupado que ya utiliza el mapa.
-    marcadores_por_stop = {}
-    lineas_por_stop = defaultdict(set)
-    for linea_servicio, elementos in mapa.get('stops', {}).items():
-        if linea_servicio not in lineas_t05:
+    # Índice de paradas GTFS por línea y líneas que coinciden en cada parada.
+    stop_by_id, lines_by_stop = {}, defaultdict(set)
+    for line_code, items in (mapa.get('stops') or {}).items():
+        if line_code not in lineas_t05:
             continue
-        for elemento in elementos:
-            ids_elemento = elemento.get('stop_ids') or [
-                elemento.get('id') or elemento.get('stop_id') or ''
-            ]
-            for stop_id in ids_elemento:
-                if stop_id:
-                    lineas_por_stop[str(stop_id)].add(linea_servicio)
-                    if linea_servicio == nombre:
-                        marcadores_por_stop[str(stop_id)] = dict(elemento)
+        for item in items or []:
+            item_ids = item.get('stop_ids') or [item.get('id') or item.get('stop_id') or '']
+            for stop_id in item_ids:
+                if not stop_id:
+                    continue
+                stop_id = str(stop_id)
+                lines_by_stop[stop_id].add(line_code)
+                if line_code == nombre:
+                    stop_by_id[stop_id] = dict(item)
 
-    # Agrupar los horarios por viaje y distinguir los dos sentidos publicados.
-    viajes = defaultdict(list)
-    for fila in dataset['schedule'].get('stop_times', []):
-        if str(fila.get('route_id')) == str(ruta_id) and fila.get('trip_id') is not None:
-            viajes[str(fila['trip_id'])].append(fila)
-
-    viajes_ordenados = []
-    for trip_id, filas in viajes.items():
-        filas.sort(key=lambda row: int(row.get('stop_sequence') or 0))
-        if not filas:
+    # Cada trip constituye una secuencia ordenada; se intenta distinguir el sentido
+    # mediante direction_id y, si no existe, mediante la pareja origen/destino.
+    trips = defaultdict(list)
+    for row in stop_times:
+        row_route = str(row.get('route_id') or '')
+        if route_id is not None and row_route != str(route_id):
             continue
+        trip_id = str(row.get('trip_id') or '')
+        stop_id = str(row.get('stop_id') or '')
+        if trip_id and stop_id:
+            trips[trip_id].append(row)
+
+    journey_groups = {}
+    for trip_id, rows in trips.items():
+        rows.sort(key=lambda row: int(row.get('stop_sequence') or 0))
+        if not rows:
+            continue
+        first, last = rows[0], rows[-1]
         direction_id = next((
-            str(row.get('direction_id')) for row in filas
+            str(row.get('direction_id')) for row in rows
             if row.get('direction_id') not in (None, '')
         ), None)
-        if direction_id is not None:
-            clave_sentido = ('id', direction_id)
+        if direction_id is None:
+            key = ('terminals', str(first.get('stop_id') or ''), str(last.get('stop_id') or ''))
         else:
-            clave_sentido = (
-                'terminales',
-                str(filas[0].get('stop_id') or ''),
-                str(filas[-1].get('stop_id') or '')
-            )
-        salida = str(filas[0].get('departure_time') or filas[0].get('arrival_time') or '99:99:99')
-        viajes_ordenados.append((clave_sentido, salida, filas))
+            key = ('direction', direction_id)
+        departure = str(first.get('departure_time') or first.get('arrival_time') or '99:99:99')
+        current = journey_groups.setdefault(key, [])
+        current.append((departure, rows))
 
-    grupos = defaultdict(list)
-    for clave_sentido, salida, filas in viajes_ordenados:
-        grupos[clave_sentido].append((salida, filas))
-
-    claves = list(grupos)
-    if not claves:
-        return jsonify({"error": "No hay viajes programados para esta línea", "stops": []}), 404
-
-    if all(clave[0] == 'id' for clave in claves):
-        claves.sort(key=lambda clave: (
-            0, int(clave[1])
-        ) if clave[1].isdigit() else (1, clave[1]))
+    keys = list(journey_groups)
+    if keys and all(key[0] == 'direction' for key in keys):
+        keys.sort(key=lambda key: (0, int(key[1])) if key[1].isdigit() else (1, key[1]))
     else:
-        claves.sort(key=lambda clave: min(salida for salida, _ in grupos[clave]))
+        keys.sort(key=lambda key: min(item[0] for item in journey_groups[key]))
 
-    indice = 0 if sentido == 'ida' else 1
-    if indice >= len(claves):
-        return jsonify({"error": "El GTFS no publica ese sentido para esta línea", "stops": []}), 404
+    index = 0 if sentido == 'ida' else 1
+    selected_rows = None
+    if keys:
+        selected_key = keys[index] if index < len(keys) else keys[0]
+        selected_rows = min(journey_groups[selected_key], key=lambda item: item[0])[1]
+        if index == 1 and len(keys) == 1:
+            selected_rows = list(reversed(selected_rows))
 
-    viajes_sentido = grupos[claves[indice]]
-    _, viaje = min(viajes_sentido, key=lambda elemento: elemento[0])
-    viaje = sorted(viaje, key=lambda row: int(row.get('stop_sequence') or 0))
+    # Si stop_times no contiene viajes utilizables (p. ej. calendario parcial),
+    # se usa la lista de paradas que ya alimenta los marcadores del mapa.
+    stop_list = []
+    if selected_rows:
+        included = set()
+        for row in selected_rows:
+            stop_id = str(row.get('stop_id') or '')
+            base = stop_by_id.get(stop_id, {
+                'id': stop_id,
+                'name': row.get('stop_name') or row.get('stop_name_text') or 'Parada',
+            })
+            stop = dict(base)
+            marker_id = str(stop.get('id') or stop.get('stop_id') or stop_id)
+            if not marker_id or marker_id in included:
+                continue
+            included.add(marker_id)
+            ids = stop.get('stop_ids') or [stop_id]
+            served_lines = set(stop.get('lineas') or [])
+            for stop_ref in ids:
+                served_lines.update(lines_by_stop.get(str(stop_ref), set()))
+            served_lines.add(nombre)
+            stop.update({
+                'id': marker_id,
+                'concesion': 'T05',
+                'stop_ids': ids,
+                'lineas': sorted(line for line in served_lines if line in lineas_t05),
+            })
+            stop_list.append(stop)
+    else:
+        for source in (mapa.get('stops') or {}).get(nombre, []) or []:
+            stop = dict(source)
+            ids = stop.get('stop_ids') or [stop.get('id') or stop.get('stop_id') or '']
+            served_lines = set(stop.get('lineas') or [])
+            for stop_ref in ids:
+                served_lines.update(lines_by_stop.get(str(stop_ref), set()))
+            served_lines.add(nombre)
+            stop['stop_ids'] = ids
+            stop['lineas'] = sorted(line for line in served_lines if line in lineas_t05)
+            stop['concesion'] = 'T05'
+            stop_list.append(stop)
+        if sentido == 'vuelta':
+            stop_list.reverse()
 
-    paradas, marcadores_incluidos, shape = [], set(), []
-    for fila in viaje:
-        stop_id = str(fila.get('stop_id') or '')
-        base = marcadores_por_stop.get(stop_id, {
-            'id': stop_id,
-            'name': fila.get('stop_name') or 'Parada',
-        })
-        parada = dict(base)
-        marcador_id = str(parada.get('id') or parada.get('stop_id') or stop_id)
-        if not marcador_id or marcador_id in marcadores_incluidos:
-            continue
-        marcadores_incluidos.add(marcador_id)
-        ids_marcador = parada.get('stop_ids') or [stop_id]
-        lineas_servidas = set(parada.get('lineas') or [])
-        for identificador in ids_marcador:
-            lineas_servidas.update(lineas_por_stop.get(str(identificador), set()))
-        parada.update({
-            'id': marcador_id,
-            'concesion': 'T05',
-            'stop_ids': ids_marcador,
-            'lineas': sorted(lineas_servidas),
-        })
-        paradas.append(parada)
+    if not stop_list:
+        return jsonify({
+            "error": "No hay paradas cargadas para " + nombre,
+            "stops": [],
+        }), 200
+
+    # El trazado se dibuja con las coordenadas de las paradas si el shape oficial
+    # no está disponible en el resumen GTFS de la concesión.
+    shape = []
+    for stop in stop_list:
         try:
-            lat, lon = float(parada.get('lat')), float(parada.get('lon'))
+            lat = float(stop.get('lat') if stop.get('lat') is not None else stop.get('latitude'))
+            lon_value = stop.get('lon')
+            if lon_value is None:
+                lon_value = stop.get('lng') if stop.get('lng') is not None else stop.get('longitude')
+            lon = float(lon_value)
             if -90 <= lat <= 90 and -180 <= lon <= 180:
                 shape.append([lat, lon])
         except (TypeError, ValueError):
-            pass
-
-    if not paradas:
-        return jsonify({"error": "No se han encontrado paradas para este sentido", "stops": []}), 404
+            continue
 
     return jsonify({
         'linea': nombre,
         'sentido': sentido,
-        'origen': paradas[0].get('name', ''),
-        'destino': paradas[-1].get('name', ''),
+        'origen': stop_list[0].get('name') or stop_list[0].get('stop_name') or '',
+        'destino': stop_list[-1].get('name') or stop_list[-1].get('stop_name') or '',
         'shape': shape,
-        'stops': paradas,
+        'stops': stop_list,
     })
 
 
-'''
+'''''
 if "def api_paradas_direccion_t05(" not in app:
     if anchor not in app:
         raise SystemExit("No se encontró el punto para registrar el endpoint GTFS T05.")
