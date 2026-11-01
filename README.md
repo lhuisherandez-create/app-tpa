@@ -8,7 +8,8 @@ Aplicación web móvil para consultar exclusivamente las tres rutas GTFS de la c
 - Líneas muestra T05-01, T05-20 y T05-50.
 - Cada línea muestra sus paradas en el orden del GTFS oficial.
 - Seleccionar una parada desde la lista o el mapa abre la misma ficha inferior.
-- La ficha permite consultar Hoy y Mañana, horarios oficiales y favoritos.
+- La ficha de parada muestra arriba un minimapa centrado en su ubicación, después un selector de líneas (Todas o una línea concreta) y debajo las llegadas programadas y las predicciones en tiempo real cuando están disponibles.
+- La ficha permite consultar Hoy y Mañana y guardar paradas favoritas.
 - El seguimiento en tiempo real se mantiene para T05 cuando el feed está disponible.
 
 ## Despliegue en Render
