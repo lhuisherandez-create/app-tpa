@@ -37,10 +37,14 @@ def get_paradas_linea_gtfs(concesion, nombre_linea):
     ), {})
     # Ordenar por stop_sequence del primer viaje programado de la ruta.
     # Los marcadores siguen usando el mismo stop_id y las coordenadas corregidas del mapa.
-    paradas_mapa = {
-        str(item.get('id') or item.get('stop_id') or ''): dict(item)
-        for item in mapa.get('stops', {}).get(nombre, [])
-    }
+    paradas_mapa = {}
+    for item in mapa.get('stops', {}).get(nombre, []):
+        ids_marcador = item.get('stop_ids') or [
+            item.get('id') or item.get('stop_id') or ''
+        ]
+        for identificador in ids_marcador:
+            if identificador:
+                paradas_mapa[str(identificador)] = dict(item)
     horarios = dataset['schedule'].get('stop_times', [])
     horarios_ruta = [item for item in horarios if str(item.get('route_id')) == str(next(
         (route_id for route_id, info in mapa.get('routes', {}).items()
@@ -57,12 +61,19 @@ def get_paradas_linea_gtfs(concesion, nombre_linea):
             key=lambda items: min(str(item.get('departure_time', '99:99:99')) for item in items)
         )
         primer_viaje.sort(key=lambda item: int(item.get('stop_sequence', 0)))
+        ids_marcadores_incluidos = set()
         for paso in primer_viaje:
             stop_id = str(paso.get('stop_id') or '')
-            parada = paradas_mapa.get(stop_id, {
+            parada_base = paradas_mapa.get(stop_id, {
                 'id': stop_id,
                 'name': paso.get('stop_name', 'Parada'),
             })
+            parada = dict(parada_base)
+            id_marcador = str(parada.get('id') or parada.get('stop_id') or stop_id)
+            if id_marcador in ids_marcadores_incluidos:
+                continue
+            ids_marcadores_incluidos.add(id_marcador)
+            parada['id'] = id_marcador
             parada['concesion'] = codigo
             parada['lineas'] = [nombre]
             paradas.append(parada)
