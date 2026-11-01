@@ -30,6 +30,7 @@
     @media(max-width:480px){.t05-sheet{max-height:77dvh;min-height:340px}.t05-mini{height:102px;flex-basis:102px}.t05-map-route{height:190px}}
 
     /* Replica móvil: cabecera, franja superior, mapa, lista de líneas y ficha completa. */
+    body > header:not(#t05-top){display:none!important}
     #t05-top{height:58px;padding:0 12px;flex-direction:row;align-items:center;justify-content:space-between}
     #t05-header-back{width:27px;height:32px;border:0;background:transparent;color:#252930;font-size:17px;padding:0;margin-right:7px}
     #t05-header-back[hidden]{display:none!important}
