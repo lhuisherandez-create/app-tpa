@@ -87,6 +87,19 @@ if sort_old in html:
 elif sort_new not in html:
     raise SystemExit("No se pudo integrar el filtrado de las llegadas por línea.")
 
+# El botón "Ver próximo servicio" también debe sincronizar las pestañas Hoy/Mañana.
+next_service_old = """if (selectorFecha) selectorFecha.value = fechaSiguiente;
+            cargarLlegadasParada(stopId, popup, fechaSiguiente, stopIds);"""
+next_service_new = """if (selectorFecha) selectorFecha.value = fechaSiguiente;
+            if (typeof popup._onFechaSeleccionada === 'function') {
+              popup._onFechaSeleccionada(fechaSiguiente);
+            }
+            cargarLlegadasParada(stopId, popup, fechaSiguiente, stopIds, popup._lineaFiltroActiva || '');"""
+if next_service_old in html:
+    html = html.replace(next_service_old, next_service_new, 1)
+elif next_service_new not in html:
+    raise SystemExit("No se pudo enlazar el botón Ver próximo servicio con las pestañas de fecha.")
+
 # Ocultar el contenido heredado desde el primer render hasta que arranque T05.
 html_start = html.lower().find("<html")
 html_end = html.find(">", html_start) if html_start >= 0 else -1
@@ -99,7 +112,7 @@ if 'id="t05-boot-style"' not in html:
     html = html.replace("</head>", boot_css + "</head>", 1)
 
 # Cargar la aplicación móvil después de los scripts originales, para reutilizar el mapa y sus datos.
-script_tag = """  <script src="{{ url_for('static', filename='t05-mobile.js') }}?v=13"></script>
+script_tag = """  <script src="{{ url_for('static', filename='t05-mobile.js') }}?v=14"></script>
 """
 if "filename='t05-mobile.js'" not in html:
     if "</body>" not in html:
