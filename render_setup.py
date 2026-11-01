@@ -35,12 +35,43 @@ def get_paradas_linea_gtfs(concesion, nombre_linea):
         info for info in mapa.get('routes', {}).values()
         if str(info.get('short_name', '')).upper() == nombre
     ), {})
+    # Ordenar por stop_sequence del primer viaje programado de la ruta.
+    # Los marcadores siguen usando el mismo stop_id y las coordenadas corregidas del mapa.
+    paradas_mapa = {
+        str(item.get('id') or item.get('stop_id') or ''): dict(item)
+        for item in mapa.get('stops', {}).get(nombre, [])
+    }
+    horarios = dataset['schedule'].get('stop_times', [])
+    horarios_ruta = [item for item in horarios if str(item.get('route_id')) == str(next(
+        (route_id for route_id, info in mapa.get('routes', {}).items()
+         if str(info.get('short_name', '')).upper() == nombre), ''
+    ))]
+    viajes = {}
+    for item in horarios_ruta:
+        viajes.setdefault(str(item.get('trip_id')), []).append(item)
+
     paradas = []
-    for parada_original in mapa.get('stops', {}).get(nombre, []):
-        parada = dict(parada_original)
-        parada['concesion'] = codigo
-        parada['lineas'] = [nombre]
-        paradas.append(parada)
+    if viajes:
+        primer_viaje = min(
+            viajes.values(),
+            key=lambda items: min(str(item.get('departure_time', '99:99:99')) for item in items)
+        )
+        primer_viaje.sort(key=lambda item: int(item.get('stop_sequence', 0)))
+        for paso in primer_viaje:
+            stop_id = str(paso.get('stop_id') or '')
+            parada = paradas_mapa.get(stop_id, {
+                'id': stop_id,
+                'name': paso.get('stop_name', 'Parada'),
+            })
+            parada['concesion'] = codigo
+            parada['lineas'] = [nombre]
+            paradas.append(parada)
+    else:
+        for parada_original in mapa.get('stops', {}).get(nombre, []):
+            parada = dict(parada_original)
+            parada['concesion'] = codigo
+            parada['lineas'] = [nombre]
+            paradas.append(parada)
 
     return jsonify({
         "concesion": codigo,
