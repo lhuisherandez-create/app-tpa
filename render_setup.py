@@ -155,20 +155,77 @@ if 'id="pantalla-inicio"' in html:
     )
 
 # La ficha se abre igual desde los marcadores del mapa o desde la lista de una línea.
-old_popup = '''              '<div class="stop-popup-top">' +
+old_popup = '''            '<div class="stop-popup">' +
+              '<div class="stop-popup-top">' +
                 '<b class="stop-popup-title">' + escaparHTML(parada.name) + '</b>' +
                 '<button type="button" class="stop-favorite-button"><i class="fa-regular fa-star"></i> Guardar</button>' +
-              '</div>' +'''
-new_popup = '''              '<div class="stop-day-tabs" role="tablist" aria-label="Día de consulta">' +
-                '<button type="button" class="stop-day-tab active" data-stop-day="0">Hoy</button>' +
-                '<button type="button" class="stop-day-tab" data-stop-day="1">Mañana</button>' +
               '</div>' +
+              '<span class="stop-popup-label">Líneas que paran aquí</span>' +
+              '<div class="stop-line-list">' +
+                (insigniasLineas || '<span class="stop-arrival-state">Sin líneas identificadas</span>') +
+              '</div>' +
+              '<div class="stop-arrivals">' +
+                '<span class="stop-popup-label">Próximas salidas</span>' +
+                (configuracionConcesionActiva?.funciones?.horarios
+                  ? '<input type="date" class="stop-date-input" aria-label="Fecha de las salidas">' : '') +
+                '<div class="llegadas-parada stop-arrival-state">Consultando información de servicio...</div>' +
+                '<div class="stop-schedule-note">' +
+                  (configuracionConcesionActiva?.funciones?.tiempo_real
+                    ? '“En vivo” utiliza predicciones GTFS-RT; “Programado” corresponde al horario oficial.'
+                    : 'La información mostrada procede del horario oficial GTFS.') +
+                '</div>' +
+              '</div>' +
+            '</div>'''
+new_popup = '''            '<div class="stop-popup">' +
+              '<div class="stop-mini-map" id="stop-mini-map-' + escaparHTML(String(parada.id || '').replace(/[^a-zA-Z0-9_-]/g, '')) + '" aria-label="Mapa de ubicación de la parada"></div>' +
               '<div class="stop-popup-top">' +
                 '<b class="stop-popup-title">' + escaparHTML(parada.name) + '</b>' +
                 '<button type="button" class="stop-favorite-button" aria-label="Guardar parada"><i class="fa-regular fa-star"></i></button>' +
-              '</div>' +'''
+              '</div>' +
+              '<section class="stop-line-selector">' +
+                '<span class="stop-popup-label">Líneas que paran aquí</span>' +
+                '<div class="stop-line-list">' +
+                  (insigniasLineas || '<span class="stop-arrival-state">Sin líneas identificadas</span>') +
+                '</div>' +
+              '</section>' +
+              '<section class="stop-arrivals">' +
+                '<div class="stop-arrivals-heading">' +
+                  '<span class="stop-popup-label">Próximas llegadas</span>' +
+                  '<div class="stop-day-tabs" role="tablist" aria-label="Día de consulta">' +
+                    '<button type="button" class="stop-day-tab active" data-stop-day="0">Hoy</button>' +
+                    '<button type="button" class="stop-day-tab" data-stop-day="1">Mañana</button>' +
+                  '</div>' +
+                '</div>' +
+                (configuracionConcesionActiva?.funciones?.horarios
+                  ? '<input type="date" class="stop-date-input" aria-label="Fecha de las salidas">' : '') +
+                '<div class="llegadas-parada stop-arrival-state">Consultando información de servicio...</div>' +
+                '<div class="stop-schedule-note">' +
+                  (configuracionConcesionActiva?.funciones?.tiempo_real
+                    ? 'En vivo = predicción del autobús · Programado = horario oficial.'
+                    : 'Llegadas según el horario oficial GTFS.') +
+                '</div>' +
+              '</section>' +
+            '</div>'''
 if old_popup in html:
     html = html.replace(old_popup, new_popup, 1)
+
+# Convierte las etiquetas de línea en selectores que filtran las llegadas de esta parada.
+old_badges = '''          const insigniasLineas = lineasParada.map(nombre => {
+            const color = coloresLineas[nombre] || '#475569';
+            return '<span class="stop-line-badge" style="background:' + color + ';">' +
+              escaparHTML(nombre) + '</span>';
+          }).join('');'''
+new_badges = '''          const insigniasLineas = ['__ALL__', ...lineasParada].map(nombre => {
+            const todas = nombre === '__ALL__';
+            const etiqueta = todas ? 'Todas' : nombre;
+            const color = todas ? '#59616b' : (coloresLineas[nombre] || '#475569');
+            return '<button type="button" class="stop-line-badge stop-line-filter' +
+              (todas ? ' active' : '') + '" data-linea-filtro="' +
+              escaparHTML(todas ? '__ALL__' : nombre) + '" style="--line-color:' + color + ';">' +
+              escaparHTML(etiqueta) + '</button>';
+          }).join('');'''
+if old_badges in html:
+    html = html.replace(old_badges, new_badges, 1)
 
 old_date = '''            if (selectorFecha) {
               selectorFecha.min = hoy;
@@ -406,8 +463,116 @@ css = r'''
     }
     @media (min-width:641px) { .leaflet-popup-content-wrapper { min-width:330px; max-width:390px; } }
 '''
+
+css += r'''
+    /* Contenido de la ficha: mapa de situación, selector de línea y llegadas. */
+    .stop-mini-map { width:100%; height:112px; overflow:hidden; border-radius:8px; margin:0 0 9px; background:#e9edf0; border:1px solid #e2e5e8; }
+    .stop-mini-map .leaflet-control-attribution { font-size:7px; }
+    .stop-mini-map-missing { display:grid; height:100%; place-items:center; color:#7b838d; font-size:10px; }
+    .stop-popup-top { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+    .stop-popup-title { flex:1; margin:0 !important; font-size:13px !important; line-height:1.25; }
+    .stop-line-selector { margin:2px 0 9px; }
+    .stop-line-selector .stop-popup-label { margin:0 0 5px; }
+    .stop-line-list { display:flex; flex-wrap:wrap; gap:5px; }
+    .stop-line-filter { appearance:none; cursor:pointer; border:1px solid #dfe3e7 !important; background:#fff !important; color:#525a64 !important; padding:5px 9px !important; border-radius:5px !important; font-size:10px !important; font-weight:800; }
+    .stop-line-filter.active { border-color:var(--line-color) !important; background:var(--line-color) !important; color:#fff !important; }
+    .stop-arrivals { border-top:1px solid #e7e9ec; margin-top:7px; padding-top:7px; }
+    .stop-arrivals-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:3px; }
+    .stop-arrivals-heading .stop-popup-label { margin:0; }
+    .stop-day-tabs { display:flex; gap:3px; border:0; margin:0; }
+    .stop-day-tab { height:25px; padding:0 9px; border:1px solid #e1e4e8; border-radius:5px; background:#fff; color:#646c75; font-size:9px; font-weight:700; }
+    .stop-day-tab.active { background:#f4e9ed; color:#6d1838; border-color:#d8bdc7; }
+    @media(max-width:640px) {
+      .leaflet-popup-content-wrapper { max-height:68vh !important; }
+      .leaflet-popup-content { max-height:68vh !important; }
+      .stop-mini-map { height:105px; }
+      .stop-arrivals { max-height:31vh; }
+    }
+'''
+
 if 'Ficha de parada con hoja inferior móvil' not in html:
     html = html.replace('</style>', css + '\n  </style>', 1)
+
+
+# Permite filtrar las llegadas por la línea elegida sin volver a consultar otra parada.
+html = html.replace(
+    "async function cargarLlegadasParada(stopId, popup, fecha = fechaLocalISO(), stopIds = null) {",
+    "async function cargarLlegadasParada(stopId, popup, fecha = fechaLocalISO(), stopIds = null, lineaFiltro = undefined) {", 1
+)
+html = html.replace(
+    "      if (!contenedor) return;\\n\\n      // Solo la consulta del día actual",
+    "      if (!contenedor) return;\\n      if (lineaFiltro !== undefined) popup._lineaFiltroActiva = lineaFiltro;\\n      const filtroLineaActiva = popup._lineaFiltroActiva || '';\\n\\n      // Solo la consulta del día actual", 1
+)
+html = html.replace(
+    "        elementos.sort((a, b) => Number(a.timestampMostrado || 0) - Number(b.timestampMostrado || 0));\\n\\n        if (!elementos.length)",
+    "        elementos.sort((a, b) => Number(a.timestampMostrado || 0) - Number(b.timestampMostrado || 0));\\n        if (filtroLineaActiva) {\\n          const filtrados = elementos.filter(item => String(item.linea || '').trim().toUpperCase() === String(filtroLineaActiva).trim().toUpperCase());\\n          elementos.splice(0, elementos.length, ...filtrados);\\n        }\\n\\n        if (!elementos.length)", 1
+)
+
+
+# El minimapa usa las coordenadas reales de la parada; las llegadas se actualizan por línea.
+const popupOpenAnchor = "            const elemento = evento.popup.getElement();\\n            const selectorFecha = elemento?.querySelector('.stop-date-input');";
+const popupOpenReplacement = """            const elemento = evento.popup.getElement();
+            const miniMapaElemento = elemento?.querySelector('.stop-mini-map');
+            const latitudParada = Number(parada.lat);
+            const longitudParada = Number(parada.lon);
+            if (miniMapaElemento && Number.isFinite(latitudParada) && Number.isFinite(longitudParada)) {
+              evento.popup._miniMapaParada?.remove();
+              const miniMapa = L.map(miniMapaElemento, {
+                zoomControl: false,
+                attributionControl: false,
+                dragging: false,
+                scrollWheelZoom: false,
+                doubleClickZoom: false,
+                boxZoom: false,
+                keyboard: false,
+                tap: false
+              }).setView([latitudParada, longitudParada], 15);
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap'
+              }).addTo(miniMapa);
+              L.circleMarker([latitudParada, longitudParada], {
+                radius: 7, color: '#ffffff', weight: 2, fillColor: '#6d1838', fillOpacity: 1
+              }).addTo(miniMapa);
+              evento.popup._miniMapaParada = miniMapa;
+              L.DomEvent.disableClickPropagation(miniMapaElemento);
+              setTimeout(() => miniMapa.invalidateSize(false), 100);
+            } else if (miniMapaElemento) {
+              miniMapaElemento.innerHTML = '<span class="stop-mini-map-missing">Ubicación no disponible</span>';
+            }
+
+            const selectorFecha = elemento?.querySelector('.stop-date-input');""";
+html = html.replace(popupOpenAnchor, popupOpenReplacement, 1);
+
+const lineFilterAnchor = "            const botonFavorito = elemento?.querySelector('.stop-favorite-button');";
+const lineFilterReplacement = """            evento.popup._lineaFiltroActiva = '';
+            const filtrosLinea = Array.from(elemento?.querySelectorAll('[data-linea-filtro]') || []);
+            filtrosLinea.forEach(boton => {
+              boton.addEventListener('click', (click) => {
+                L.DomEvent.stop(click);
+                const elegida = boton.dataset.lineaFiltro === '__ALL__' ? '' : boton.dataset.lineaFiltro;
+                evento.popup._lineaFiltroActiva = elegida;
+                filtrosLinea.forEach(filtro => filtro.classList.toggle(
+                  'active',
+                  (filtro.dataset.lineaFiltro === '__ALL__' && !elegida) || filtro.dataset.lineaFiltro === elegida
+                ));
+                cargarLlegadasParada(
+                  parada.id, evento.popup, selectorFecha?.value || hoy, parada.stop_ids, elegida
+                );
+              });
+            });
+
+            const botonFavorito = elemento?.querySelector('.stop-favorite-button');""";
+html = html.replace(lineFilterAnchor, lineFilterReplacement, 1);
+
+const intervalAnchor = "                cargarLlegadasParada(parada.id, evento.popup, fechaActual, parada.stop_ids);";
+const intervalReplacement = "                cargarLlegadasParada(parada.id, evento.popup, fechaActual, parada.stop_ids, evento.popup._lineaFiltroActiva || '');";
+html = html.replace(intervalAnchor, intervalReplacement, 1);
+
+const closeAnchor = "            if (eventoCierre.popup) {\\n              eventoCierre.popup._solicitudLlegadasParada =";
+const closeReplacement = "            if (eventoCierre.popup) {\\n              eventoCierre.popup._miniMapaParada?.remove();\\n              eventoCierre.popup._miniMapaParada = null;\\n              eventoCierre.popup._solicitudLlegadasParada =";
+html = html.replace(closeAnchor, closeReplacement, 1);
+
 
 template_path.write_text(html, encoding='utf-8')
 print('Configuración aplicada: T05 exclusiva, mapa inicial, tres líneas y ficha de paradas con horarios.')
