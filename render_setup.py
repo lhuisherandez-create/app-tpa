@@ -257,8 +257,11 @@ if old_date in html:
 
 # Ficha fija inferior: evita el autopan de Leaflet y usa marcadores T05 color vino.
 html = html.replace(
-    "            {\\n              maxWidth: window.matchMedia('(max-width: 640px)').matches",
-    "            {\n              autoPan: false,\n              maxWidth: window.matchMedia('(max-width: 640px)').matches", 1
+"""            {
+              maxWidth: window.matchMedia('(max-width: 640px)').matches""",
+"""            {
+              autoPan: false,
+              maxWidth: window.matchMedia('(max-width: 640px)').matches""", 1
 )
 html = html.replace("fillColor: '#334155', fillOpacity: 1", "fillColor: '#6d1838', fillOpacity: 1", 1)
 
