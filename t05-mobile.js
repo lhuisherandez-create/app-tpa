@@ -32,6 +32,9 @@
     /* Replica móvil: cabecera, franja superior, mapa, lista de líneas y ficha completa. */
     body > header:not(#t05-top){display:none!important}
     #t05-top{height:58px;padding:0 12px;flex-direction:row;align-items:center;justify-content:space-between}
+    #t05-home-banner{display:none!important}
+    body.t05-home-active #map{top:58px!important}
+    body.t05-home-active #header-card{top:66px!important}
     #t05-header-back{width:27px;height:32px;border:0;background:transparent;color:#252930;font-size:17px;padding:0;margin-right:7px}
     #t05-header-back[hidden]{display:none!important}
     .t05-brand{display:flex;align-items:center;gap:8px;flex:1}
@@ -85,11 +88,41 @@
     @media(max-width:480px){.t05-mini{height:188px}.t05-map-route{height:205px}}
     @media(min-width:700px){.t05-sheet{left:50%;right:auto;width:520px;transform:translateX(-50%);border-left:1px solid #e6e8ea;border-right:1px solid #e6e8ea}}
 
+
+    /* La ficha reproduce el panel compacto inferior de la referencia. */
+    .t05-shade{display:none!important}
+    .t05-sheet{position:fixed;z-index:25000;left:0;right:0;top:auto;bottom:58px;width:auto;height:auto;max-height:69dvh;min-height:295px;display:flex;flex-direction:column;overflow:hidden;padding:0 0 env(safe-area-inset-bottom);background:#fff;border:1px solid #e5e7ea;border-bottom:0;border-radius:12px 12px 0 0;box-shadow:0 -4px 16px #0002}
+    .t05-grab{display:none}
+    .t05-mini{height:112px;flex:0 0 112px;margin:8px 9px 5px;border:1px solid #e2e5e8;border-radius:6px;overflow:hidden;background:#e9edef}
+    .t05-stop-head{min-height:37px;flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:5px 10px;background:#fff}
+    .t05-stop-head strong{font-size:12px;line-height:1.25;font-weight:800;color:#292e34}
+    .t05-stop-actions{display:flex;align-items:center;gap:5px}
+    .t05-icon{width:27px;height:27px;border:1px solid #e2e5e8;border-radius:5px;background:#fff;color:#59616a;font-size:12px}
+    .t05-chips{flex:0 0 auto;display:flex;flex-wrap:nowrap;gap:5px;overflow-x:auto;padding:4px 10px 8px;border-bottom:1px solid #eceef0;background:#fff}
+    .t05-chip{flex:0 0 auto;min-height:26px;padding:0 9px;border:1px solid #dfe3e7;border-radius:4px;background:#fff;color:#505861;font-size:10px;font-weight:800}
+    .t05-chip.active{background:var(--chip);border-color:var(--chip);color:#fff}
+    .t05-empty-lines{font-size:10px;color:#8a9098;padding:4px 0}
+    .t05-arr-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:7px;padding:7px 10px 6px;background:#fff}
+    .t05-arr-head strong{font-size:10px;font-weight:700;color:#454b53}
+    .t05-days{display:flex;gap:4px;flex:0 0 auto}
+    .t05-days button{height:25px;min-width:48px;padding:0 7px;border:1px solid #e0e4e8;border-radius:4px;background:#fff;color:#68717a;font-size:9px;font-weight:700}
+    .t05-days button.active{background:#f4e9ed;color:#6d1838;border-color:#d8bdc7}
+    .t05-arrivals{flex:1;min-height:65px;overflow-y:auto;padding:0 10px 10px;background:#fff;-webkit-overflow-scrolling:touch}
+    .t05-arrivals .stop-schedule-group{padding:7px 0!important;border-top:1px solid #eceef0;background:#fff}
+    .t05-arrivals .stop-schedule-line{font-size:10px!important;font-weight:800}
+    .t05-arrivals .stop-schedule-destination{font-size:10px!important}
+    .t05-arrivals .stop-schedule-times{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+    .t05-arrivals .stop-schedule-time{min-width:55px;padding:5px 7px!important;border-radius:4px!important;background:#f3f4f6!important}
+    .t05-arrivals .stop-schedule-time.live{background:#eaf7ef!important}
+    .t05-arrivals .stop-schedule-time strong{font-size:12px!important}
+    .t05-arrivals .stop-schedule-time small{font-size:8px!important}
+    @media(max-width:480px){.t05-sheet{max-height:72dvh;min-height:280px}.t05-mini{height:108px;flex-basis:108px}}
+    @media(min-width:700px){.t05-sheet{left:50%;right:auto;width:520px;transform:translateX(-50%)}}
+
   `;
   function shell(){
     const st=document.createElement('style');st.textContent=css;document.head.append(st);
-    document.body.insertAdjacentHTML('afterbegin',`<header id="t05-top"><button id="t05-header-back" type="button" aria-label="Volver" hidden><i class="fa-solid fa-arrow-left"></i></button><div class="t05-brand"><strong>TPA</strong><small>GOBIERNO DE ARAGÓN</small></div><button class="t05-bell" type="button" aria-label="Notificaciones"><i class="fa-regular fa-bell"></i></button></header><div id="t05-home-banner"><div class="t05-banner-land"></div><svg class="t05-banner-bus" viewBox="0 0 340 68" role="img" aria-label="Autobús de transporte público"><rect x="20" y="13" width="292" height="43" rx="9" fill="#f8f8f8"/><path d="M36 18h216a5 5 0 0 1 5 5v17H36z" fill="#263c52"/><path d="M262 18h36a7 7 0 0 1 7 7v15h-43z" fill="#263c52"/><path d="M24 44h285v7H24z" fill="#6d1838"/><path d="M40 20h34v17H40zM80 20h34v17H80zM120 20h34v17h-34zM160 20h34v17h-34zM200 20h44v17h-44z" fill="#d8e6ed"/><circle cx="78" cy="56" r="9" fill="#222831"/><circle cx="78" cy="56" r="4" fill="#b9c0c6"/><circle cx="268" cy="56" r="9" fill="#222831"/><circle cx="268" cy="56" r="4" fill="#b9c0c6"/><text x="150" y="49" text-anchor="middle" font-size="8" font-weight="700" fill="#fff">TRANSPORTE T05</text></svg></div>
-      <nav id="t05-nav"><button data-page="inicio" class="active"><i class="fa-solid fa-house"></i><span>Inicio</span></button><button data-page="lineas"><i class="fa-solid fa-route"></i><span>Líneas</span></button><button data-page="favoritos"><i class="fa-regular fa-star"></i><span>Favoritos</span></button><button data-page="mas"><i class="fa-solid fa-ellipsis"></i><span>Más</span></button></nav>
+    document.body.insertAdjacentHTML('afterbegin',`<header id="t05-top"><button id="t05-header-back" type="button" aria-label="Volver" hidden><i class="fa-solid fa-arrow-left"></i></button><div class="t05-brand"><strong>TPA</strong><small>GOBIERNO DE ARAGÓN</small></div><button class="t05-bell" type="button" aria-label="Notificaciones"><i class="fa-regular fa-bell"></i></button></header><nav id="t05-nav"><button data-page="inicio" class="active"><i class="fa-solid fa-house"></i><span>Inicio</span></button><button data-page="lineas"><i class="fa-solid fa-route"></i><span>Líneas</span></button><button data-page="favoritos"><i class="fa-regular fa-star"></i><span>Favoritos</span></button><button data-page="mas"><i class="fa-solid fa-ellipsis"></i><span>Más</span></button></nav>
       <main id="t05-lines" class="t05-screen" hidden><div class="t05-inner">
       <section id="t05-index"><label class="t05-search"><input id="t05-line-search" type="search" placeholder="Buscar línea…" aria-label="Buscar línea"></label><div id="t05-routes" class="t05-routes">${Object.entries(LINES).map(([c,v])=>`<button class="t05-route" data-line="${c}"><span class="t05-stripe" style="background:${v[1]}"></span><span class="t05-code">${c}</span><span class="t05-name">${v[0]}</span><i class="fa-solid fa-chevron-right"></i></button>`).join('')}</div></section>
       <section id="t05-directions" hidden><button class="t05-back" data-back="index"><i class="fa-solid fa-arrow-left"></i></button><div class="t05-head"><div><h1 id="t05-line-title"></h1></div></div><div class="t05-dir"><span class="t05-dir-label">Ida</span><button data-direction="ida"><span id="t05-ida">Cargando…</span><i class="fa-solid fa-chevron-right"></i></button><span class="t05-dir-label">Vuelta</span><button data-direction="vuelta"><span id="t05-vuelta">Cargando…</span><i class="fa-solid fa-chevron-right"></i></button></div></section>
@@ -146,16 +179,17 @@
     const served=[...new Set((s.lineas||[]).filter(x=>LINES[x]))].sort();
     const routes=served.length?served:(line?[line]:[]);
     sheet.innerHTML=`<div class="t05-mini" id="t05-mini" aria-label="Mapa de ubicación de la parada"></div>
-      <div class="t05-days" role="tablist" aria-label="Día de consulta"><button class="active" data-day="0">Hoy</button><button data-day="1">Mañana</button></div>
       <div class="t05-stop-head"><strong>${esc(s.name)}</strong><div class="t05-stop-actions">
         <button class="t05-icon" type="button" data-refresh aria-label="Actualizar llegadas"><i class="fa-solid fa-rotate"></i></button>
         <button class="t05-icon" type="button" data-center aria-label="Centrar ubicación"><i class="fa-solid fa-location-crosshairs"></i></button>
         <button class="t05-icon" type="button" data-fav aria-label="Guardar parada"><i class="fa-regular fa-star"></i></button>
       </div></div>
       <div class="t05-chips" aria-label="Líneas que paran aquí">
-        ${routes.map(x=>`<button class="t05-chip" data-chip="${x}" style="--chip:${LINES[x][1]}">${x}</button>`).join('')}
+        ${routes.length ? routes.map(x=>`<button class="t05-chip" data-chip="${x}" style="--chip:${LINES[x][1]}">${x}</button>`).join('') : '<span class="t05-empty-lines">No hay líneas identificadas</span>'}
       </div>
-      <div class="t05-arr-head"><strong>Próximas llegadas</strong></div>
+      <div class="t05-arr-head"><strong>Llegadas programadas / en tiempo real</strong>
+        <div class="t05-days" role="tablist" aria-label="Día de consulta"><button class="active" data-day="0">Hoy</button><button data-day="1">Mañana</button></div>
+      </div>
       <input type="date" class="stop-date-input t05-date" aria-label="Fecha de consulta">
       <div class="t05-arrivals"><div class="llegadas-parada stop-arrival-state">Consultando horarios…</div></div>`;
     document.body.append(sheet);
@@ -185,7 +219,7 @@
     sheet.querySelector('[data-center]').addEventListener('click',()=>{
       if(sheetMap)sheetMap.setView([+s.lat,+s.lon],16);
     });
-    const lat=s.lat===null||s.lat===undefined||s.lat===''?NaN:Number(s.lat),lon=s.lon===null||s.lon===undefined||s.lon===''?NaN:Number(s.lon),node=$('#t05-mini');
+    const lat=s.lat===null||s.lat===undefined||s.lat===''?NaN:Number(s.lat),lonValue=s.lon===null||s.lon===undefined||s.lon===''?(s.lng??s.longitude):s.lon,lon=lonValue===null||lonValue===undefined||lonValue===''?NaN:Number(lonValue),node=$('#t05-mini');
     if(Number.isFinite(lat)&&Number.isFinite(lon)){
       sheetMap=L.map(node,{zoomControl:false,attributionControl:true,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,keyboard:false}).setView([lat,lon],15);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(sheetMap);
