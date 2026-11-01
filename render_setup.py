@@ -99,7 +99,7 @@ if 'id="t05-boot-style"' not in html:
     html = html.replace("</head>", boot_css + "</head>", 1)
 
 # Cargar la aplicación móvil después de los scripts originales, para reutilizar el mapa y sus datos.
-script_tag = """  <script src="{{ url_for('static', filename='t05-mobile.js') }}?v=12"></script>
+script_tag = """  <script src="{{ url_for('static', filename='t05-mobile.js') }}?v=13"></script>
 """
 if "filename='t05-mobile.js'" not in html:
     if "</body>" not in html:
