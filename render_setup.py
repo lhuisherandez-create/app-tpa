@@ -215,7 +215,7 @@ elif sort_new not in html:
     raise SystemExit("No se pudo integrar el filtrado de las llegadas por línea.")
 
 # Cargar la aplicación móvil después de los scripts originales, para reutilizar el mapa y sus datos.
-script_tag = """  <script src="{{ url_for('static', filename='t05-mobile.js') }}?v=5"></script>
+script_tag = """  <script src="{{ url_for('static', filename='t05-mobile.js') }}?v=6"></script>
 """
 if "filename='t05-mobile.js'" not in html:
     if "</body>" not in html:
