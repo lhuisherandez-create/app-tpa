@@ -187,6 +187,15 @@
     .t05-bus-map-button:active{background:#f7f1f4}
     .t05-bus-map-feedback{padding:7px 2px 0;color:#6d1838;font-size:11px;line-height:1.35}
     .t05-icon.saved{background:#fff8e8!important;border-color:#e4c77f!important;color:#976600!important}
+    #t05-favorites-view{z-index:20000!important;background:#f3f4f6!important}
+    #t05-favorites-view .favorites-panel{display:block!important;margin:0;padding:10px 0;border:0;border-radius:0;background:transparent;color:#252930}
+    #t05-favorites-view .favorites-panel-heading{padding:0 2px 10px;color:#252930;font-size:13px}
+    #t05-favorites-view .tool-close{color:#555d66}
+    #t05-favorites-view .favorite-row{gap:8px;margin:0 0 8px;padding:10px;background:#fff;border:1px solid #e4e6e9;border-radius:7px}
+    #t05-favorites-view .favorite-go{color:#252930;font-size:12px}
+    #t05-favorites-view .favorite-action{background:#f7f7f8;border-color:#e0e3e6;color:#4b5563;font-size:10px}
+    #t05-favorites-view .favorite-action.enabled{color:#976600;border-color:#e4c77f;background:#fff8e8}
+    #t05-favorites-view .favorites-note{color:#777f89;font-size:10px}
 
   `;
   function shell(){
@@ -197,6 +206,20 @@
       <section id="t05-directions" hidden><button class="t05-back" data-back="index"><i class="fa-solid fa-arrow-left"></i></button><div class="t05-head"><div><h1 id="t05-line-title"></h1></div></div><div class="t05-dir"><span class="t05-dir-label">Ida</span><button data-direction="ida"><span id="t05-ida">Cargando…</span><i class="fa-solid fa-chevron-right"></i></button><span class="t05-dir-label">Vuelta</span><button data-direction="vuelta"><span id="t05-vuelta">Cargando…</span><i class="fa-solid fa-chevron-right"></i></button></div></section>
       <section id="t05-route-screen" hidden><button class="t05-back" data-back="directions"><i class="fa-solid fa-arrow-left"></i></button><div class="t05-head"><div><h1 id="t05-route-title"></h1><p id="t05-route-subtitle"></p></div></div><div id="t05-route-map" class="t05-map-route"></div><div id="t05-route-stops" class="t05-timeline"></div></section>
       </div></main><main id="t05-more" class="t05-screen" hidden><div class="t05-head"><div><h1>Más</h1><p>Concesión T05</p></div></div></main>`);
+    const favoritesPanel=$('#panel-favoritos');
+    const favoritesView=document.createElement('main');
+    favoritesView.id='t05-favorites-view';
+    favoritesView.className='t05-screen';
+    favoritesView.hidden=true;
+    favoritesView.innerHTML='<div class="t05-inner"><div class="t05-head"><div><h1>Favoritos</h1><p>Tus paradas guardadas</p></div></div></div>';
+    if(favoritesPanel){
+      favoritesView.querySelector('.t05-inner').append(favoritesPanel);
+      favoritesPanel.hidden=true;
+    }
+    document.body.append(favoritesView);
+    favoritesView.addEventListener('click',e=>{
+      if(e.target.closest('#btn-cerrar-favoritos'))page('inicio');
+    });
     $('#t05-nav').addEventListener('click',e=>{const b=e.target.closest('[data-page]');if(b)page(b.dataset.page)});
     $('#t05-header-back').addEventListener('click', headerBack);
     $('#t05-lines').addEventListener('click',lineClick);
@@ -222,13 +245,15 @@
     closeSheet();currentPage=p;
     $('#t05-nav').querySelectorAll('button').forEach(tab=>tab.classList.toggle('active',tab.dataset.page===p));
     $('#t05-lines').hidden=p!=='lineas';$('#t05-more').hidden=p!=='mas';
+    const favoritesView=$('#t05-favorites-view');
+    if(favoritesView)favoritesView.hidden=p!=='favoritos';
     document.body.classList.toggle('t05-home-active',p==='inicio');
-    const hc=$('#header-card');if(hc)hc.style.display=p==='inicio'||p==='favoritos'?'block':'none';
+    const hc=$('#header-card');if(hc)hc.style.display=p==='inicio'?'block':'none';
     const fav=$('#panel-favoritos');if(fav)fav.hidden=p!=='favoritos';
     if(p==='favoritos'&&typeof renderFavoritos==='function')renderFavoritos();
     if(p==='lineas'){resetLine();setHeaderBack(false)}
     else setHeaderBack(false);
-    if(p==='inicio'&&typeof map!=='undefined')setTimeout(()=>map.invalidateSize(),120);
+    if((p==='inicio'||p==='favoritos')&&typeof map!=='undefined')setTimeout(()=>map.invalidateSize(),120);
   }
   function resetLine(){if(routeMap){routeMap.remove();routeMap=null}$('#t05-index').hidden=false;$('#t05-directions').hidden=true;$('#t05-route-screen').hidden=true;currentSub='index';setHeaderBack(false)}
   async function openLine(c){line=c;currentSub='directions';setHeaderBack(true);$('#t05-index').hidden=true;$('#t05-directions').hidden=false;$('#t05-route-screen').hidden=true;$('#t05-line-title').textContent=c+'  '+LINES[c][0];$('#t05-ida').textContent='Cargando…';$('#t05-vuelta').textContent='Cargando…';const prior=$('#t05-directions .t05-route-error');prior?.remove();route={};const load=async d=>{const response=await fetch('/api/t05-linea/'+encodeURIComponent(c)+'/'+d,{cache:'no-store',headers:{'Accept':'application/json'}});const raw=await response.text();let data;try{data=JSON.parse(raw)}catch(_){const preview=raw.replace(/\s+/g,' ').slice(0,150);throw Error('Respuesta no JSON del servidor (HTTP '+response.status+', '+(response.headers.get('content-type')||'sin tipo')+'). '+preview)}if(!response.ok)throw Error(data.error||('Error HTTP '+response.status));if(data.error)throw Error(data.error);if(!Array.isArray(data.stops)||!data.stops.length)throw Error('La API no encontró paradas para '+c+' ('+d+'). '+(data.debug?JSON.stringify(data.debug):''));return data};const results=await Promise.allSettled([load('ida'),load('vuelta')]);const errors=[];for(const [i,d] of ['ida','vuelta'].entries()){const target=i===0?$('#t05-ida'):$('#t05-vuelta');const result=results[i];if(result.status==='fulfilled'){route[d]=result.value;target.textContent=(result.value.origen||'Origen')+' - '+(result.value.destino||'Destino')}else{target.textContent='Error al cargar';errors.push((d==='ida'?'Ida: ':'Vuelta: ')+result.reason.message);console.error('Error cargando '+c+' '+d,result.reason)}}if(errors.length)$('#t05-directions').insertAdjacentHTML('beforeend','<p class="t05-route-error">'+esc(errors.join(' · '))+'</p>')}
