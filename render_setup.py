@@ -87,6 +87,30 @@ if sort_old in html:
 elif sort_new not in html:
     raise SystemExit("No se pudo integrar el filtrado de las llegadas por línea.")
 
+# En llegadas GTFS-RT próximas, mostrar minutos en vez de la hora del reloj.
+arrival_time_old = """              const estado = esTiempoReal
+                ? (Number(item.minutos) <= 0 ? 'RT · Llegando' : 'RT · ' + Number(item.minutos) + ' min')
+                : 'Horario oficial';
+              return '<span class="stop-schedule-time' + (esTiempoReal ? ' live' : '') +
+                '" title="' + escaparHTML(estado + diferencia) + '">' +
+                '<strong>' + escaparHTML(item.horaMostrada) + '</strong>' +"""
+arrival_time_new = """              const estado = esTiempoReal
+                ? (Number(item.minutos) <= 0 ? 'RT · Llegando' : 'RT · ' + Number(item.minutos) + ' min')
+                : 'Horario oficial';
+              const minutosRT = Number(item.minutos);
+              const hayMinutosRT = item.minutos !== null && item.minutos !== undefined &&
+                item.minutos !== '' && Number.isFinite(minutosRT);
+              const textoHora = esTiempoReal && hayMinutosRT && minutosRT < 60
+                ? (minutosRT <= 0 ? 'Llegando' : Math.min(59, Math.max(1, Math.ceil(minutosRT))) + ' min')
+                : item.horaMostrada;
+              return '<span class="stop-schedule-time' + (esTiempoReal ? ' live' : '') +
+                '" title="' + escaparHTML(estado + diferencia) + '">' +
+                '<strong>' + escaparHTML(textoHora) + '</strong>' +"""
+if arrival_time_old in html:
+    html = html.replace(arrival_time_old, arrival_time_new, 1)
+elif arrival_time_new not in html:
+    raise SystemExit("No se encontró el HTML de llegadas para mostrar minutos en predicciones GTFS-RT.")
+
 # El botón "Ver próximo servicio" también debe sincronizar las pestañas Hoy/Mañana.
 next_service_old = """if (selectorFecha) selectorFecha.value = fechaSiguiente;
             cargarLlegadasParada(stopId, popup, fechaSiguiente, stopIds);"""
@@ -112,7 +136,7 @@ if 'id="t05-boot-style"' not in html:
     html = html.replace("</head>", boot_css + "</head>", 1)
 
 # Cargar la aplicación móvil después de los scripts originales, para reutilizar el mapa y sus datos.
-script_tag = """  <script src="{{ url_for('static', filename='t05-mobile.js') }}?v=14"></script>
+script_tag = """  <script src="{{ url_for('static', filename='t05-mobile.js') }}?v=15"></script>
 """
 if "filename='t05-mobile.js'" not in html:
     if "</body>" not in html:
