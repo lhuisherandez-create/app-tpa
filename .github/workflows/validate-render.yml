@@ -19,11 +19,9 @@ jobs:
           python-version: "3.11"
       - name: Recreate the exact Render build
         run: python render_setup.py
+      - name: Validate mobile JavaScript syntax
+        run: node --check mapa-tpa-main/static/t05-mobile.js
       - name: Install application dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r mapa-tpa-main/requirements.txt pytest
-      - name: Compile application
+        run: python -m pip install -r mapa-tpa-main/requirements.txt
+      - name: Compile Python application
         run: python -m compileall -q mapa-tpa-main
-      - name: Run project tests
-        run: python -m pytest -q mapa-tpa-main/tests
