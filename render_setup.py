@@ -198,6 +198,13 @@ new_date = '''            if (selectorFecha) {
 if old_date in html:
     html = html.replace(old_date, new_date, 1)
 
+# Ficha fija inferior: evita el autopan de Leaflet y usa marcadores T05 color vino.
+html = html.replace(
+    "            {\\n              maxWidth: window.matchMedia('(max-width: 640px)').matches",
+    "            {\\n              autoPan: false,\\n              maxWidth: window.matchMedia('(max-width: 640px)').matches", 1
+)
+html = html.replace("fillColor: '#334155', fillOpacity: 1", "fillColor: '#6d1838', fillOpacity: 1", 1)
+
 # El primer encuadre siempre muestra el conjunto de paradas T05, no solo Zaragoza.
 old_fit = '''        if (!configuracionConcesionActiva?.funciones?.tiempo_real && primeraCarga) {
           const marcadores = Object.values(marcadoresParadas);
@@ -226,6 +233,7 @@ if old_fit in html:
 
 nav_script = r'''
     function navegarPestana(pestana) {
+      if (map) map.closePopup();
       document.querySelectorAll('.app-tab').forEach(tab => {
         const activa = tab.dataset.tab === pestana;
         tab.classList.toggle('active', activa);
