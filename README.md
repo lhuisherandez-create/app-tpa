@@ -1,27 +1,25 @@
 # App TPA Aragón · Concesión T05
 
-Aplicación web móvil para consultar exclusivamente las tres rutas GTFS de la concesión T05: T05-01, T05-20 y T05-50.
+Aplicación web móvil para consultar exclusivamente la concesión T05 y sus líneas T05-01, T05-20 y T05-50.
 
-## Funcionalidad
+## Interfaz móvil
 
-- Inicio abre directamente el mapa con las paradas de T05.
-- Líneas muestra T05-01, T05-20 y T05-50.
-- Cada línea muestra sus paradas en el orden del GTFS oficial.
-- Seleccionar una parada desde la lista o el mapa abre la misma ficha inferior.
-- La ficha de parada muestra arriba un minimapa centrado en su ubicación, después un selector de líneas (Todas o una línea concreta) y debajo las llegadas programadas y las predicciones en tiempo real cuando están disponibles.
-- La ficha permite consultar Hoy y Mañana y guardar paradas favoritas.
-- El seguimiento en tiempo real se mantiene para T05 cuando el feed está disponible.
+- **Inicio:** mapa de las paradas de la concesión T05.
+- **Líneas:** listado de T05-01, T05-20 y T05-50.
+- Al abrir una línea se muestran los sentidos **Ida** y **Vuelta**.
+- Cada sentido presenta el trazado en el mapa y las paradas en orden GTFS.
+- Al tocar cualquier parada, tanto en el mapa principal como en el trazado o en el listado, aparece la misma ficha fija.
+- La ficha incluye un minimapa de ubicación, selector de líneas que sirven la parada y llegadas programadas/tiempo real cuando hay predicciones disponibles.
+- Favoritos y consulta de Hoy/Mañana.
 
 ## Despliegue en Render
 
-El proyecto fuente está en `mapa-tpa-main (1).zip`. El script `render_setup.py` realiza una extracción limpia, añade el endpoint de paradas ordenadas por ruta y prepara la interfaz móvil durante el build.
+El proyecto original se conserva en `mapa-tpa-main (1).zip`. El script `render_setup.py` extrae el proyecto en cada build, prepara el endpoint de sentidos GTFS e instala el interfaz móvil `t05-mobile.js` dentro de los estáticos Flask.
 
-1. Entra en [Render](https://render.com/).
-2. Selecciona **New + → Blueprint**.
-3. Conecta `lhuisherandez-create/app-tpa`.
-4. Render detectará `render.yaml`. Pulsa **Apply** para crear el servicio `app-tpa`.
-
-Render instalará las dependencias y arrancará Flask con Gunicorn en el puerto asignado.
+1. En Render selecciona **New + → Blueprint**.
+2. Conecta `lhuisherandez-create/app-tpa`.
+3. Render detectará `render.yaml`. Pulsa **Apply** para crear el servicio.
+4. Los nuevos commits en `main` lanzan un despliegue automático.
 
 ## Ejecución local
 
