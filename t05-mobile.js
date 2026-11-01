@@ -182,10 +182,22 @@
     .t05-route,.t05-dir button,.t05-stop-row{font-family:inherit}
     .t05-route:active,.t05-dir button:active,.t05-stop-row:active{background:#f5f1f3}
     .t05-route-error{line-height:1.4}
-    .t05-bus-map-actions{padding:0 12px 12px}
-    .t05-bus-map-button{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:42px;border:1px solid #ded4da;border-radius:7px;background:#fff;color:#6d1838;font-size:12px;font-weight:800}
-    .t05-bus-map-button:active{background:#f7f1f4}
-    .t05-bus-map-feedback{padding:7px 2px 0;color:#6d1838;font-size:11px;line-height:1.35}
+    .t05-bus-map-actions{padding:2px 12px 13px}
+    .t05-bus-map-button{
+      position:relative;display:flex;align-items:center;gap:11px;width:100%;min-height:62px;
+      padding:9px 13px;border:1px solid #5d1835;border-radius:10px;
+      background:linear-gradient(110deg,#741d40 0%,#54132f 100%);
+      color:#fff;text-align:left;box-shadow:0 3px 9px rgba(77,18,44,.18);
+      transition:transform .16s ease,box-shadow .16s ease,filter .16s ease
+    }
+    .t05-bus-map-button:active{transform:translateY(1px);filter:brightness(.96);box-shadow:0 1px 4px rgba(77,18,44,.18)}
+    .t05-bus-map-button:focus-visible{outline:3px solid rgba(116,29,64,.25);outline-offset:2px}
+    .t05-bus-map-icon{width:39px;height:39px;flex:0 0 39px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.22);border-radius:9px;background:rgba(255,255,255,.13);font-size:17px}
+    .t05-bus-map-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+    .t05-bus-map-copy strong{font-size:12px;font-weight:800;line-height:1.2;letter-spacing:.1px}
+    .t05-bus-map-copy small{font-size:10px;font-weight:500;line-height:1.25;color:rgba(255,255,255,.78)}
+    .t05-bus-map-arrow{flex:0 0 auto;font-size:12px;color:rgba(255,255,255,.8)}
+    .t05-bus-map-feedback{margin:7px 1px 0;padding:9px 10px;border:1px solid #ead9e1;border-radius:7px;background:#fff;color:#762344;font-size:11px;line-height:1.35}
     .t05-icon.saved{background:#fff8e8!important;border-color:#e4c77f!important;color:#976600!important}
     #t05-favorites-view{z-index:20000!important;background:#f3f4f6!important}
     #t05-favorites-view .favorites-panel{display:block!important;margin:0;padding:10px 0;border:0;border-radius:0;background:transparent;color:#252930}
@@ -281,7 +293,11 @@
         <button class="t05-icon" type="button" data-fav aria-label="Guardar parada"><i class="fa-regular fa-star"></i></button>
       </div></div>
       <div class="t05-bus-map-actions">
-        <button class="t05-bus-map-button" type="button" data-show-bus><i class="fa-solid fa-bus"></i><span>Ver autobuses en el mapa</span></button>
+        <button class="t05-bus-map-button" type="button" data-show-bus>
+          <span class="t05-bus-map-icon" aria-hidden="true"><i class="fa-solid fa-bus"></i></span>
+          <span class="t05-bus-map-copy"><strong>Localizar autobuses</strong><small>Ver su posición en directo en el mapa</small></span>
+          <i class="t05-bus-map-arrow fa-solid fa-chevron-right" aria-hidden="true"></i>
+        </button>
         <div class="t05-bus-map-feedback" data-bus-feedback aria-live="polite" hidden></div>
       </div>
       <div class="t05-section-label">LÍNEAS QUE PARAN AQUÍ</div>
