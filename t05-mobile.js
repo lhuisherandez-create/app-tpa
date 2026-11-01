@@ -88,19 +88,19 @@
     sheet=document.createElement('section');sheet.id='t05-sheet';sheet.className='t05-sheet';
     const served=[...new Set((s.lineas||[]).filter(x=>LINES[x]))].sort();
     const routes=served.length?served:(line?[line]:[]);
-    sheet.innerHTML=\`<div class="t05-mini" id="t05-mini" aria-label="Mapa de ubicación de la parada"></div>
+    sheet.innerHTML=`<div class="t05-mini" id="t05-mini" aria-label="Mapa de ubicación de la parada"></div>
       <div class="t05-days" role="tablist" aria-label="Día de consulta"><button class="active" data-day="0">Hoy</button><button data-day="1">Mañana</button></div>
-      <div class="t05-stop-head"><strong>\${esc(s.name)}</strong><div class="t05-stop-actions">
+      <div class="t05-stop-head"><strong>${esc(s.name)}</strong><div class="t05-stop-actions">
         <button class="t05-icon" type="button" data-refresh aria-label="Actualizar llegadas"><i class="fa-solid fa-rotate"></i></button>
         <button class="t05-icon" type="button" data-center aria-label="Centrar ubicación"><i class="fa-solid fa-location-crosshairs"></i></button>
         <button class="t05-icon" type="button" data-fav aria-label="Guardar parada"><i class="fa-regular fa-star"></i></button>
       </div></div>
       <div class="t05-chips" aria-label="Líneas que paran aquí">
-        \${routes.map(x=>\`<button class="t05-chip" data-chip="\${x}" style="--chip:\${LINES[x][1]}">\${x}</button>\`).join('')}
+        ${routes.map(x=>`<button class="t05-chip" data-chip="${x}" style="--chip:${LINES[x][1]}">${x}</button>`).join('')}
       </div>
       <div class="t05-arr-head"><strong>Próximas llegadas</strong></div>
       <input type="date" class="stop-date-input t05-date" aria-label="Fecha de consulta">
-      <div class="t05-arrivals"><div class="llegadas-parada stop-arrival-state">Consultando horarios…</div></div>\`;
+      <div class="t05-arrivals"><div class="llegadas-parada stop-arrival-state">Consultando horarios…</div></div>`;
     document.body.append(sheet);
     const favorite=sheet.querySelector('[data-fav]');
     const favs=typeof favoritosParadas!=='undefined'?favoritosParadas:[];
