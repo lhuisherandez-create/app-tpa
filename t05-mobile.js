@@ -42,12 +42,6 @@
     .t05-brand small{font-size:9px;font-weight:800;line-height:1.05;letter-spacing:.25px;color:#424951}
     .t05-bell{width:32px;height:32px;border:0;background:transparent;color:#252930;font-size:16px}
     #t05-home-banner{position:fixed;z-index:2;top:58px;left:0;right:0;height:78px;overflow:hidden;background:linear-gradient(115deg,#294c42,#8caa72 50%,#344c39)}
-    .t05-banner-land{position:absolute;inset:0;background:linear-gradient(165deg,transparent 45%,#203d2d 46%,#203d2d 50%,transparent 51%),linear-gradient(15deg,transparent 52%,#66805a 53%,#66805a 58%,transparent 59%);opacity:.8}
-    .t05-banner-bus{position:absolute;width:min(88%,360px);height:68px;left:50%;top:5px;transform:translateX(-50%);filter:drop-shadow(0 3px 2px #0005)}
-    body.t05-home-active #map{top:136px!important}
-    body.t05-home-active #header-card{top:145px!important}
-    body.t05-home-active #t05-home-banner{display:block}
-    body:not(.t05-home-active) #t05-home-banner{display:none}
     #header-card .map-tools{position:absolute!important;top:0!important;right:0!important;left:auto!important;width:auto!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;pointer-events:none!important}
     #header-card .stop-search-row{display:flex!important;flex-direction:column!important;align-items:center!important;gap:7px!important;pointer-events:none!important}
     #buscador-paradas{display:none!important}
@@ -102,6 +96,7 @@
     .t05-chip{flex:0 0 auto;min-height:26px;padding:0 9px;border:1px solid #dfe3e7;border-radius:4px;background:#fff;color:#505861;font-size:10px;font-weight:800}
     .t05-chip.active{background:var(--chip);border-color:var(--chip);color:#fff}
     .t05-empty-lines{font-size:10px;color:#8a9098;padding:4px 0}
+    .t05-route-error{padding:9px 11px;color:#a51f45;font-size:10px;background:#fff;border-top:1px solid #eee}
     .t05-arr-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:7px;padding:7px 10px 6px;background:#fff}
     .t05-arr-head strong{font-size:10px;font-weight:700;color:#454b53}
     .t05-days{display:flex;gap:4px;flex:0 0 auto}
@@ -161,7 +156,7 @@
     if(p==='inicio'&&typeof map!=='undefined')setTimeout(()=>map.invalidateSize(),120);
   }
   function resetLine(){if(routeMap){routeMap.remove();routeMap=null}$('#t05-index').hidden=false;$('#t05-directions').hidden=true;$('#t05-route-screen').hidden=true;currentSub='index';setHeaderBack(false)}
-  async function openLine(c){line=c;currentSub='directions';setHeaderBack(true);$('#t05-index').hidden=true;$('#t05-directions').hidden=false;$('#t05-route-screen').hidden=true;$('#t05-line-title').textContent=c+'  '+LINES[c][0];try{const [a,v]=await Promise.all(['ida','vuelta'].map(d=>fetch('/api/t05-linea/'+c+'/'+d).then(r=>r.json())));if(a.error||v.error)throw Error(a.error||v.error);route={ida:a,vuelta:v};$('#t05-ida').textContent=a.origen+' - '+a.destino;$('#t05-vuelta').textContent=v.origen+' - '+v.destino}catch(e){$('#t05-ida').textContent='No disponible';$('#t05-vuelta').textContent='No disponible';console.error(e)}}
+  async function openLine(c){line=c;currentSub='directions';setHeaderBack(true);$('#t05-index').hidden=true;$('#t05-directions').hidden=false;$('#t05-route-screen').hidden=true;$('#t05-line-title').textContent=c+'  '+LINES[c][0];$('#t05-ida').textContent='Cargando…';$('#t05-vuelta').textContent='Cargando…';try{const load=async d=>{const response=await fetch('/api/t05-linea/'+encodeURIComponent(c)+'/'+d,{cache:'no-store'});let data;try{data=await response.json()}catch(_){throw Error('La API de recorridos devolvió una respuesta no válida ('+response.status+')')}if(!response.ok)throw Error(data.error||('Error '+response.status));if(data.error)throw Error(data.error);if(!Array.isArray(data.stops)||!data.stops.length)throw Error('No hay paradas GTFS para '+c+' ('+d+')');return data};const [a,v]=await Promise.all([load('ida'),load('vuelta')]);route={ida:a,vuelta:v};$('#t05-ida').textContent=(a.origen||'Origen')+' - '+(a.destino||'Destino');$('#t05-vuelta').textContent=(v.origen||'Origen')+' - '+(v.destino||'Destino')}catch(e){$('#t05-ida').textContent='Error al cargar';$('#t05-vuelta').textContent='Error al cargar';$('#t05-directions').insertAdjacentHTML('beforeend','<p class="t05-route-error">'+esc(e.message)+'</p>');console.error('Error cargando '+c,e)}}
   function openDirection(d){if(!route?.[d])return;direction=d;currentSub='route';setHeaderBack(true);const r=route[d];$('#t05-directions').hidden=true;$('#t05-route-screen').hidden=false;$('#t05-route-title').textContent=line+' · '+(d==='ida'?'Ida':'Vuelta');$('#t05-route-subtitle').textContent=r.origen+' - '+r.destino;$('#t05-route-stops').innerHTML=(r.stops||[]).map((s,i)=>`<button class="t05-stop-row" data-route-stop="${i}"><span class="t05-track"><span class="t05-dot"></span></span><span class="t05-stop-name">${esc(s.name)}</span><i class="fa-solid fa-chevron-right"></i></button>`).join('');if(routeMap)routeMap.remove();routeMap=L.map('t05-route-map',{zoomControl:false,scrollWheelZoom:false});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap'}).addTo(routeMap);const layers=[];if(r.shape?.length>1)layers.push(L.polyline(r.shape,{color:LINES[line][1],weight:4}).addTo(routeMap));(r.stops||[]).forEach(s=>{if(s.lat!==null&&s.lon!==null&&s.lat!==''&&s.lon!==''&&Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lon))){const m=L.circleMarker([+s.lat,+s.lon],{radius:5,color:'#fff',weight:2,fillColor:'#6d1838',fillOpacity:1}).addTo(routeMap);m.on('click',e=>{L.DomEvent.stop(e);openStop(s)});layers.push(m)}});if(layers.length)routeMap.fitBounds(L.featureGroup(layers).getBounds(),{padding:[12,12],maxZoom:11});setTimeout(()=>routeMap?.invalidateSize(),100)}
   function lineClick(e){const b=e.target.closest('[data-back]');if(b){if(b.dataset.back==='index')resetLine();else{if(routeMap){routeMap.remove();routeMap=null}$('#t05-route-screen').hidden=true;$('#t05-directions').hidden=false}return}const l=e.target.closest('[data-line]');if(l){openLine(l.dataset.line);return}const d=e.target.closest('[data-direction]');if(d){openDirection(d.dataset.direction);return}const s=e.target.closest('[data-route-stop]');if(s)openStop(route?.[direction]?.stops?.[+s.dataset.routeStop])}
   function findStop(s){const all=typeof listaParadas!=='undefined'?listaParadas:[];const set=new Set(ids(s));return all.find(x=>String(x.id)===String(s.id)||ids(x).some(id=>set.has(id)))?{...s,...all.find(x=>String(x.id)===String(s.id)||ids(x).some(id=>set.has(id)))}:s}
@@ -180,6 +175,7 @@
     const routes=served.length?served:(line?[line]:[]);
     sheet.innerHTML=`<div class="t05-mini" id="t05-mini" aria-label="Mapa de ubicación de la parada"></div>
       <div class="t05-stop-head"><strong>${esc(s.name)}</strong><div class="t05-stop-actions">
+        <button class="t05-icon" type="button" data-close aria-label="Cerrar ficha"><i class="fa-solid fa-xmark"></i></button>
         <button class="t05-icon" type="button" data-refresh aria-label="Actualizar llegadas"><i class="fa-solid fa-rotate"></i></button>
         <button class="t05-icon" type="button" data-center aria-label="Centrar ubicación"><i class="fa-solid fa-location-crosshairs"></i></button>
         <button class="t05-icon" type="button" data-fav aria-label="Guardar parada"><i class="fa-regular fa-star"></i></button>
@@ -215,6 +211,7 @@
       sheet.querySelectorAll('[data-chip]').forEach(x=>x.classList.toggle('active',x.dataset.chip===adapter._lineaFiltroActiva));
       load();
     }));
+    sheet.querySelector('[data-close]').addEventListener('click',closeSheet);
     sheet.querySelector('[data-refresh]').addEventListener('click',load);
     sheet.querySelector('[data-center]').addEventListener('click',()=>{
       if(sheetMap)sheetMap.setView([+s.lat,+s.lon],16);
