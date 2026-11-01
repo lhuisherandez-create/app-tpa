@@ -60,17 +60,37 @@ def api_paradas_direccion_t05(nombre_linea, direccion):
                 if line_code == nombre:
                     stop_by_id[stop_id] = dict(item)
 
-    # Cada trip constituye una secuencia ordenada; se intenta distinguir el sentido
-    # mediante direction_id y, si no existe, mediante la pareja origen/destino.
+    # En GTFS estándar route_id y direction_id viven en trips.txt; algunas
+    # fuentes los replican en stop_times. Se soportan ambas variantes.
+    trip_records = schedule.get('trips') or []
+    if isinstance(trip_records, dict):
+        trip_records = list(trip_records.values())
+    trip_meta = {}
+    for record in trip_records:
+        if isinstance(record, dict) and record.get('trip_id') is not None:
+            trip_meta[str(record.get('trip_id'))] = record
+
+    route_trip_ids = {
+        trip_id for trip_id, record in trip_meta.items()
+        if route_id is not None and str(record.get('route_id') or '') == str(route_id)
+    }
+
+    # Cada viaje constituye una secuencia ordenada de paradas.
     trips = defaultdict(list)
     for row in stop_times:
-        row_route = str(row.get('route_id') or '')
-        if route_id is None or row_route != str(route_id):
-            continue
         trip_id = str(row.get('trip_id') or '')
         stop_id = str(row.get('stop_id') or '')
-        if trip_id and stop_id:
-            trips[trip_id].append(row)
+        if not trip_id or not stop_id or route_id is None:
+            continue
+        row_route = str(row.get('route_id') or '')
+        if route_trip_ids:
+            if trip_id not in route_trip_ids:
+                continue
+        elif not row_route or row_route != str(route_id):
+            continue
+        if row_route and row_route != str(route_id):
+            continue
+        trips[trip_id].append(row)
 
     journey_groups = {}
     for trip_id, rows in trips.items():
@@ -78,10 +98,13 @@ def api_paradas_direccion_t05(nombre_linea, direccion):
         if not rows:
             continue
         first, last = rows[0], rows[-1]
-        direction_id = next((
-            str(row.get('direction_id')) for row in rows
-            if row.get('direction_id') not in (None, '')
-        ), None)
+        direction_value = trip_meta.get(trip_id, {}).get('direction_id')
+        if direction_value in (None, ''):
+            direction_value = next((
+                row.get('direction_id') for row in rows
+                if row.get('direction_id') not in (None, '')
+            ), None)
+        direction_id = str(direction_value) if direction_value not in (None, '') else None
         if direction_id is None:
             key = ('terminals', str(first.get('stop_id') or ''), str(last.get('stop_id') or ''))
         else:
