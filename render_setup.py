@@ -524,6 +524,12 @@ html = html.replace(
           elementos.splice(0, elementos.length, ...filtrados);
         }
 
+        if (!elementos.length && filtroLineaActiva) {
+          contenedor.innerHTML = '<div class="stop-arrival-state">No hay llegadas programadas para ' +
+            escaparHTML(filtroLineaActiva) + ' en la fecha seleccionada.</div>';
+          return;
+        }
+
         if (!elementos.length)""", 1
 )
 
