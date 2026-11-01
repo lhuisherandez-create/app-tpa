@@ -182,6 +182,11 @@
     .t05-route,.t05-dir button,.t05-stop-row{font-family:inherit}
     .t05-route:active,.t05-dir button:active,.t05-stop-row:active{background:#f5f1f3}
     .t05-route-error{line-height:1.4}
+    .t05-bus-map-actions{padding:0 12px 12px}
+    .t05-bus-map-button{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:42px;border:1px solid #ded4da;border-radius:7px;background:#fff;color:#6d1838;font-size:12px;font-weight:800}
+    .t05-bus-map-button:active{background:#f7f1f4}
+    .t05-bus-map-feedback{padding:7px 2px 0;color:#6d1838;font-size:11px;line-height:1.35}
+    .t05-icon.saved{background:#fff8e8!important;border-color:#e4c77f!important;color:#976600!important}
 
   `;
   function shell(){
@@ -220,6 +225,7 @@
     document.body.classList.toggle('t05-home-active',p==='inicio');
     const hc=$('#header-card');if(hc)hc.style.display=p==='inicio'||p==='favoritos'?'block':'none';
     const fav=$('#panel-favoritos');if(fav)fav.hidden=p!=='favoritos';
+    if(p==='favoritos'&&typeof renderFavoritos==='function')renderFavoritos();
     if(p==='lineas'){resetLine();setHeaderBack(false)}
     else setHeaderBack(false);
     if(p==='inicio'&&typeof map!=='undefined')setTimeout(()=>map.invalidateSize(),120);
@@ -249,6 +255,10 @@
         <button class="t05-icon" type="button" data-center aria-label="Centrar ubicación"><i class="fa-solid fa-location-crosshairs"></i></button>
         <button class="t05-icon" type="button" data-fav aria-label="Guardar parada"><i class="fa-regular fa-star"></i></button>
       </div></div>
+      <div class="t05-bus-map-actions">
+        <button class="t05-bus-map-button" type="button" data-show-bus><i class="fa-solid fa-bus"></i><span>Ver autobuses en el mapa</span></button>
+        <div class="t05-bus-map-feedback" data-bus-feedback aria-live="polite" hidden></div>
+      </div>
       <div class="t05-section-label">LÍNEAS QUE PARAN AQUÍ</div>
       <div class="t05-chips" aria-label="Líneas que paran aquí">
         ${routes.length ? routes.map(x=>`<button class="t05-chip" data-chip="${x}" style="--chip:${LINES[x][1]}">${x}</button>`).join('') : '<span class="t05-empty-lines">No hay líneas identificadas</span>'}
@@ -261,12 +271,19 @@
       <div class="t05-arrivals"><div class="llegadas-parada stop-arrival-state">Consultando horarios…</div></div>`;
     document.body.append(sheet);
     const favorite=sheet.querySelector('[data-fav]');
-    const favs=typeof favoritosParadas!=='undefined'?favoritosParadas:[];
-    let saved=Array.isArray(favs)&&favs.some(x=>String(x.id)===String(s.id));
-    if(saved)favorite.innerHTML='<i class="fa-solid fa-star"></i>';
+    const favoriteCode=String(s.concesion||'T05').toUpperCase();
+    const getFavorites=()=>typeof favoritosParadas!=='undefined'&&Array.isArray(favoritosParadas)?favoritosParadas:[];
+    const isFavorite=()=>getFavorites().some(x=>String(x.id)===String(s.id)&&String(x.concesion||'T05').toUpperCase()===favoriteCode);
+    const paintFavorite=()=>{
+      const saved=isFavorite();
+      favorite.classList.toggle('saved',saved);
+      favorite.setAttribute('aria-label',saved?'Quitar parada de favoritos':'Guardar parada');
+      favorite.innerHTML=saved?'<i class="fa-solid fa-star"></i>':'<i class="fa-regular fa-star"></i>';
+    };
+    paintFavorite();
     favorite.addEventListener('click',()=>{
       if(typeof alternarFavorito==='function')alternarFavorito(s);
-      saved=!saved;favorite.innerHTML=saved?'<i class="fa-solid fa-star"></i>':'<i class="fa-regular fa-star"></i>';
+      paintFavorite();
     });
     const today=typeof fechaLocalISO==='function'?fechaLocalISO():(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})();
     const tomorrow=typeof desplazarFechaISO==='function'?desplazarFechaISO(today,1):today;
@@ -307,6 +324,44 @@
     }));
     sheet.querySelector('[data-close]').addEventListener('click',closeSheet);
     sheet.querySelector('[data-refresh]').addEventListener('click',load);
+    sheet.querySelector('[data-show-bus]').addEventListener('click',()=>{
+      const feedback=sheet?.querySelector('[data-bus-feedback]');
+      const lineasBus=adapter?._lineaFiltroActiva?[adapter._lineaFiltroActiva]:routes;
+      const todos=typeof marcadoresBuses!=='undefined'?Object.values(marcadoresBuses):[];
+      const porLinea=todos.filter(m=>m&&lineasBus.includes(String(m._lineaBus||'').toUpperCase()));
+      const genericos=todos.filter(m=>m&&(!m._lineaBus||String(m._lineaBus).toUpperCase()==='T05'));
+      const buses=porLinea.length?porLinea:genericos;
+      if(!buses.length||typeof map==='undefined'||!map){
+        if(feedback){
+          feedback.textContent='Ahora mismo no hay autobuses de estas líneas localizados por GPS.';
+          feedback.hidden=false;
+        }
+        return;
+      }
+      if(feedback)feedback.hidden=true;
+      buses.forEach(m=>{if(!map.hasLayer(m))m.addTo(map)});
+      const parLat=s.lat===null||s.lat===undefined||s.lat===''?NaN:Number(s.lat);
+      const parLonRaw=s.lon===null||s.lon===undefined||s.lon===''?(s.lng??s.longitude):s.lon;
+      const parLon=parLonRaw===null||parLonRaw===undefined||parLonRaw===''?NaN:Number(parLonRaw);
+      const points=buses.map(m=>m.getLatLng());
+      if(Number.isFinite(parLat)&&Number.isFinite(parLon))points.push(L.latLng(parLat,parLon));
+      let busCercano=buses[0],distanciaMinima=Infinity;
+      if(Number.isFinite(parLat)&&Number.isFinite(parLon)){
+        const paradaLatLng=L.latLng(parLat,parLon);
+        buses.forEach(m=>{
+          const distancia=m.getLatLng().distanceTo(paradaLatLng);
+          if(distancia<distanciaMinima){distanciaMinima=distancia;busCercano=m}
+        });
+      }
+      page('inicio');
+      setTimeout(()=>{
+        if(typeof map==='undefined'||!map)return;
+        map.invalidateSize();
+        if(points.length===1)map.setView(points[0],15);
+        else map.fitBounds(L.latLngBounds(points),{padding:[42,42],maxZoom:14});
+        busCercano?.openPopup?.();
+      },180);
+    });
     sheet.querySelector('[data-center]').addEventListener('click',()=>{
       if(sheetMap)sheetMap.setView([+s.lat,+s.lon],16);
     });
