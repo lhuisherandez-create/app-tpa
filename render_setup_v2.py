@@ -124,6 +124,7 @@ html = html.replace(
         if (!elementos.length)""", 1)
 marker_anchor = '          marcador.addTo(capasParadas);'
 marker_patch = '''          marcador._t05StopData = parada;
+          marcador._t05Tactile = true;
           marcador.unbindPopup();
           marcador.on('click', eventoMarcador => {
             if (eventoMarcador.originalEvent) L.DomEvent.stop(eventoMarcador.originalEvent);
